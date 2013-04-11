@@ -25,6 +25,7 @@
 #include "scheduler.h"
 #include "synchronizer.h"
 #include "event-impl.h"
+#include "traced-value.h"
 
 #include "ptr.h"
 #include "assert.h"
@@ -101,6 +102,7 @@ private:
   uint32_t m_uid;
   uint32_t m_currentUid;
   uint64_t m_currentTs;
+  TracedValue<uint64_t> m_currentTsTrace;
   uint32_t m_currentContext;
 
   mutable SystemMutex m_mutex;
