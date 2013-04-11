@@ -25,7 +25,6 @@
 #include <stdio.h>
 
 #include "contiki-channel.h"
-#include "ns3/socket-phy.h"
 #include "contiki-mac.h"
 
 
@@ -35,7 +34,7 @@ namespace ns3 {
 class ContikiChannel;
 class ContikiMac;
 
-class ContikiPhy : public SocketPhy {
+class ContikiPhy : public Object {
 
   typedef Callback< void,Ptr<Packet> > RxOkCallback;
   typedef std::vector<ContikiMac *> Listeners;
