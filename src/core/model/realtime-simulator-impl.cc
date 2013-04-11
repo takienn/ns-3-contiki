@@ -62,6 +62,9 @@ RealtimeSimulatorImpl::GetTypeId (void)
                    TimeValue (Seconds (0.1)),
                    MakeTimeAccessor (&RealtimeSimulatorImpl::m_hardLimit),
                    MakeTimeChecker ())
+    .AddTraceSource("CurrentTsRt", 
+                    "Current Simulator Realtime", 
+                    MakeTraceSourceAccessor(&RealtimeSimulatorImpl::m_currentTsTrace))
   ;
   return tid;
 }
@@ -81,6 +84,7 @@ RealtimeSimulatorImpl::RealtimeSimulatorImpl ()
   // before ::Run is entered, the m_currentUid will be zero
   m_currentUid = 0;
   m_currentTs = 0;
+  m_currentTsTrace = 0;
   m_currentContext = 0xffffffff;
   m_unscheduledEvents = 0;
 
@@ -340,6 +344,7 @@ RealtimeSimulatorImpl::ProcessOneEvent (void)
     // is frozen until the next event is executed.
     //
     m_currentTs = next.key.m_ts;
+    m_currentTsTrace = m_currentTs;
     m_currentContext = next.key.m_context;
     m_currentUid = next.key.m_uid;
 

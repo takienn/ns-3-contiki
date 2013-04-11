@@ -54,6 +54,7 @@ def build(bld):
         'helper/application-container.cc',
         'helper/net-device-container.cc',
         'helper/node-container.cc',
+        'helper/contiki-node-container.cc',
         'helper/packet-socket-helper.cc',
         'helper/trace-helper.cc',
         ]
@@ -131,6 +132,7 @@ def build(bld):
         'helper/application-container.h',
         'helper/net-device-container.h',
         'helper/node-container.h',
+        'helper/contiki-node-container.h',
         'helper/packet-socket-helper.h',
         'helper/trace-helper.h',
         ]
