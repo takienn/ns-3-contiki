@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <sys/types.h>
 #include <sys/mman.h>
 #include <semaphore.h>
 
@@ -21,7 +23,7 @@ NS_LOG_COMPONENT_DEFINE ("IpcReader");
 namespace ns3 {
 
 IpcReader::IpcReader ()
-: m_traffic_in (NULL), m_nodeId (0), m_readCallback (0), m_readThread (0), m_stop (false),
+: m_traffic_in (NULL), m_nodeId (0), m_pid (0), m_readCallback (0), m_readThread (0), m_stop (false),
    m_destroyEvent ()
 {
 	m_evpipe[0] = -1;
@@ -33,7 +35,7 @@ IpcReader::~IpcReader ()
 	Stop ();
 }
 
-void IpcReader::Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback,uint32_t nodeId)
+void IpcReader::Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback,uint32_t nodeId, pid_t pid)
 {
 	int tmp;
 
@@ -64,6 +66,7 @@ void IpcReader::Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallba
 	m_traffic_in = addr;
 	m_readCallback = readCallback;
 	m_nodeId = nodeId;
+	m_pid = pid;
 
 	//
 	// We're going to spin up a thread soon, so we need to make sure we have
@@ -214,6 +217,17 @@ void IpcReader::Run (void)
 		        NS_FATAL_ERROR("sem_post() failed: " << strerror (errno));
 
 	}
+}
+
+void IpcReader::SetTimer (uint64_t time)
+{
+	Simulator::Schedule(Seconds(time), &IpcReader::SendAlarm, this);
+}
+
+void IpcReader::SendAlarm (void)
+{
+	if( kill(m_pid, SIGALRM) == -1)
+		NS_FATAL_ERROR("kill() failed: " << strerror(errno));
 }
 
 } // namespace ns3

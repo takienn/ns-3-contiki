@@ -1,9 +1,11 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <string>
 
 #include "contiki-device.h"
 
+extern "C" void ContikiMain(char *nodeId, int mode);
 
 NS_LOG_COMPONENT_DEFINE ("ContikiNetDevice");
 
@@ -22,6 +24,7 @@ IpcReader::Data ContikiIpcReader::DoRead (void)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 	void *retval = memcpy((void *)buf,m_traffic_in,bufferSize);
+	memset(m_traffic_in,0,bufferSize);
 
 	if(sem_post(m_sem_in) == -1)
 		NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
@@ -67,6 +70,8 @@ ContikiNetDevice::ContikiNetDevice ()
   m_ifIndex (0),
   m_traffic_in (NULL),
   m_traffic_out (NULL),
+  m_traffic_size (65536),
+  m_time_size (8),
   m_startEvent (),
   m_stopEvent (),
   m_ipcReader (0)
@@ -142,7 +147,27 @@ ContikiNetDevice::StartContikiDevice (void)
 	NS_LOG_LOGIC ("Spinning up read thread");
 
 	m_ipcReader = Create<ContikiIpcReader> ();
-	m_ipcReader->Start (m_traffic_in, MakeCallback (&ContikiNetDevice::ReadCallback, this), m_nodeId);
+	m_ipcReader->Start (m_traffic_in, MakeCallback (&ContikiNetDevice::ReadCallback, this), m_nodeId, child);
+
+	/* Forking Contiki */
+
+	if ((child = fork()) == -1)
+		NS_ABORT_MSG ("ContikiNetDevice::CreateIpc(): Unix fork error, errno = " << strerror (errno));
+	else if (child) {   /*  This is the parent. */
+		NS_LOG_DEBUG ("Parent process");
+		NS_LOG_UNCOND("Child PID: " << child);
+	} else {
+		//Running Contiki
+
+		std::stringstream ss;
+		ss << m_nodeId;
+		char c_nodeId[128];
+		strcpy(c_nodeId, ss.str().c_str());
+
+		ContikiMain(c_nodeId, 0);
+
+
+	}
 }
 
 void
@@ -151,7 +176,10 @@ ContikiNetDevice::ContikiClockHandle(uint64_t oldValue, uint64_t newValue)
 	if( sem_wait(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
-	memcpy(m_traffic_time, (void *)&newValue, m_time_size);
+	memcpy(m_traffic_time, (void *)&newValue, sizeof(newValue));
+
+	if( sem_post(m_sem_time) == -1)
+			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 }
 
@@ -195,14 +223,7 @@ ContikiNetDevice::StopContikiDevice (void)
 	NS_LOG_UNCOND("Killing Child");
 	kill(child,SIGKILL);
 
-	shm_unlink(m_shm_in_name.str().c_str());
-	shm_unlink(m_shm_out_name.str().c_str());
-	shm_unlink(m_shm_time_name.str().c_str());
-
-	sem_unlink(m_sem_in_name.str().c_str());
-	sem_unlink(m_sem_out_name.str().c_str());
-	sem_unlink(m_sem_time_name.str().c_str());
-
+	ClearIpc();
 }
 
 void
@@ -222,17 +243,30 @@ ContikiNetDevice::CreateIpc (void)
 	/* Shared Memory*/
 
 
-	m_shm_in_name << "./traffic_in_" << m_nodeId;
-	if((m_shm_in = shm_open(m_shm_in_name.str().c_str(),O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-		NS_FATAL_ERROR("shm_open()" << strerror(errno));
+	// Preparing shm/sem names
 
-	m_shm_out_name << "./traffic_out_" << m_nodeId;
+	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
+	m_shm_out_name << "/ns_contiki_traffic_out_" << m_nodeId;
+	m_shm_time_name << "/ns_contiki_traffic_time_" << m_nodeId;
+
+	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
+	m_sem_out_name << "/ns_contiki_sem_out_" << m_nodeId;
+	m_sem_time_name << "/ns_contiki_sem_time_ns3";
+
+
+	//Assuring there are no shm/sem leftovers from previous executions
+	ClearIpc();
+
+	if((m_shm_in = shm_open(m_shm_in_name.str().c_str(),O_RDWR | O_CREAT | 	O_EXCL , S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
+		NS_FATAL_ERROR("shm_open() " << strerror(errno) << m_shm_in_name.str().c_str());
+
+
 	if((m_shm_out = shm_open(m_shm_out_name.str().c_str(),O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-		NS_FATAL_ERROR("shm_open()" << strerror(errno));
+		NS_FATAL_ERROR("shm_open()" << strerror(errno) << m_shm_out_name);
 
-	m_shm_time_name << "./traffic_time_" << m_nodeId;
+
 	if ((m_shm_time = shm_open(m_shm_time_name.str().c_str(),O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-		NS_FATAL_ERROR("shm_open()" << strerror(errno));
+		NS_FATAL_ERROR("shm_open()" << strerror(errno) << m_shm_time_name);
 
 	if(ftruncate(m_shm_in, m_traffic_size) == -1 \
 			|| ftruncate(m_shm_out, m_traffic_size) == -1 \
@@ -245,33 +279,38 @@ ContikiNetDevice::CreateIpc (void)
 	if(m_traffic_time == NULL)
 		m_traffic_time = mmap(NULL, m_time_size, PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_time, 0);
 
-	m_sem_in_name << "./sem_in_" << m_nodeId;
 	if((m_sem_in = sem_open(m_sem_in_name.str().c_str(), O_RDWR | O_CREAT | O_EXCL,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED)
-		NS_FATAL_ERROR("sem_open() failed: " << strerror(errno));
+		NS_FATAL_ERROR("sem_open() failed: " << strerror(errno) << m_sem_in_name);
 
-	m_sem_out_name << "./sem_out_" << m_nodeId;
 	if ((m_sem_out = sem_open(m_sem_out_name.str().c_str(), O_RDWR | O_CREAT | O_EXCL,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED)
-		NS_FATAL_ERROR("sem_open() failed: " << strerror(errno));
+		NS_FATAL_ERROR("sem_open() failed: " << strerror(errno) << m_sem_out_name);
 
-	m_sem_time_name << "./sem_time_ns3";
 	if ((m_sem_time = sem_open(m_sem_time_name.str().c_str(), O_RDWR | O_CREAT,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED)
-		NS_FATAL_ERROR("sem_open() failed: " << strerror(errno));
+		NS_FATAL_ERROR("sem_open() failed: " << strerror(errno) << m_sem_time_name.str());
 
-	/* Forking Contiki */
+}
 
-	if ((child = fork()) == -1)
-		NS_ABORT_MSG ("ContikINetDevice::CreateIpc(): Unix fork error, errno = " << strerror (errno));
-	else if (child) {   /*  This is the parent. */
-		NS_LOG_DEBUG ("Parent process");
-		//NS_LOG_UNCOND("Child PID: " << child);
-	} else {
+void
+ContikiNetDevice::ClearIpc(){
 
-	}
+	shm_unlink(m_shm_in_name.str().c_str());
+	shm_unlink(m_shm_out_name.str().c_str());
+	shm_unlink(m_shm_time_name.str().c_str());
 
+	sem_close(m_sem_in);
+	sem_close(m_sem_out);
+	sem_close(m_sem_time);
 
+	sem_unlink(m_sem_in_name.str().c_str());
+	sem_unlink(m_sem_out_name.str().c_str());
+	sem_unlink(m_sem_time_name.str().c_str());
+
+	munmap(m_traffic_in, m_traffic_size);
+	munmap(m_traffic_out, m_traffic_size);
+	munmap(m_traffic_time, m_time_size);
 }
 
 void
