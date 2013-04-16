@@ -38,13 +38,25 @@ public:
    * \param readCallback A callback to invoke when new data is
    * available.
    */
-  void Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback, uint32_t nodeId);
+  void Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback, uint32_t nodeId, pid_t pid);
 
   /**
    * Stop the read thread and reset internal state.  This does not
    * close the file descriptor used for reading.
    */
   void Stop (void);
+
+  /**
+   * Schedules a NS-3 timer upon request from contiki to implement its
+   * rtimer module
+   */
+  void SetTimer (uint64_t time);
+
+  /**
+   * Callback that is called upon timer expiration , that signals contiki fork
+   * that its time.
+   */
+  void SendAlarm (void);
 
 protected:
 
@@ -83,6 +95,7 @@ protected:
   //int m_fd;
   void *m_traffic_in;
   uint32_t m_nodeId;
+  pid_t m_pid;
 
 private:
 

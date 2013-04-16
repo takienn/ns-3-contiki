@@ -233,12 +233,18 @@ private:
 	/**
 	 * \internal
 	 *
-	 * Create a pair of sockets and spawn a new process passing one socket to it for IPC.
-	 * If this method returns, we'll have a socket waiting for us in m_sock that we can use
-	 * to talk to the process on the other end of the socket.
+	 * Create shared memory segments and spawn a new process passing NodeId as parameter to it for IPC.
+	 * If this method returns, Contiki Process should be able to open and map the same memory segments
+	 * so that an IPC can be done.
 	 */
 	void CreateIpc (void);
 
+	/**
+	 * \internal
+	 * Clear the file descriptors for the shared memory segments
+	 * and unmap the corresponding addresses and unlinking the semaphores
+	 */
+	void ClearIpc (void);
 	/**
 	 * \internal
 	 *
