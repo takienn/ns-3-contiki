@@ -14,6 +14,8 @@
 #include "ns3/system-thread.h"
 #include "ns3/event-id.h"
 
+#include <sstream>
+
 namespace ns3 {
 
 /**
@@ -38,13 +40,32 @@ public:
    * \param readCallback A callback to invoke when new data is
    * available.
    */
-  void Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback, uint32_t nodeId);
+  void Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback, uint32_t nodeId, pid_t pid);
 
   /**
    * Stop the read thread and reset internal state.  This does not
    * close the file descriptor used for reading.
    */
   void Stop (void);
+
+  /**
+   * Check if contiki requested to schedule a timer
+   */
+  void CheckTimer(void);
+
+  /**
+   * Schedules a NS-3 timer upon request from contiki to implement its
+   * rtimer module
+   *\param time value of the interval to set timer to
+   *\param type type of the timer as requested by contiki, 0 for event timer, 1 for reattime timer
+   */
+  void SetTimer (uint64_t time, int type);
+
+  /**
+   * Callback that is called upon timer expiration , that signals contiki fork
+   * that its time.
+   */
+  void SendAlarm (void);
 
 protected:
 
@@ -76,13 +97,23 @@ protected:
    */
   virtual IpcReader::Data DoRead (void) = 0;
 
-  /**
-   * \internal
-   * \brief The file descriptor to read from.
-   */
-  //int m_fd;
+  std::stringstream m_shm_in_name;
+  std::stringstream m_shm_timer_name;
+
+  std::stringstream m_sem_in_name;
+  std::stringstream m_sem_timer_name;
+
+  sem_t *m_sem_in;
+  sem_t *m_sem_timer;
+
+  int m_shm_in;
+  int m_shm_timer;
+
   void *m_traffic_in;
+  void *m_traffic_timer;
+
   uint32_t m_nodeId;
+  pid_t m_pid;
 
 private:
 

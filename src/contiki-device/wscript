@@ -2,9 +2,12 @@
 
 # def options(opt):
 #     pass
+import os.path
 
-# def configure(conf):
-#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+def configure(conf):
+	conf.env.append_value("LINKFLAGS", ["-lcontiki-ns3"])
+	
+
 
 def build(bld):
     module = bld.create_ns3_module('contiki-device', ['network', 'internet'])
@@ -40,6 +43,8 @@ def build(bld):
         'helper/contiki-phy-helper.h',
         'helper/contiki-mac-helper.h'
         ]
+
+    bld.env.append_value("LINKFLAGS", ["libcontiki-ns3.so"])
 
     #if bld.env.ENABLE_EXAMPLES:
      #   bld.add_subdirs('examples')
