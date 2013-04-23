@@ -62,7 +62,7 @@ RealtimeSimulatorImpl::GetTypeId (void)
                    TimeValue (Seconds (0.1)),
                    MakeTimeAccessor (&RealtimeSimulatorImpl::m_hardLimit),
                    MakeTimeChecker ())
-    .AddTraceSource("CurrentTsRt", 
+    .AddTraceSource("CurrentTs",
                     "Current Simulator Realtime", 
                     MakeTraceSourceAccessor(&RealtimeSimulatorImpl::m_currentTsTrace))
   ;
