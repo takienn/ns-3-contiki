@@ -104,13 +104,13 @@ protected:
   std::stringstream m_sem_timer_name;
 
   sem_t *m_sem_in;
-  sem_t *m_sem_timer;
+  //static sem_t *m_sem_timer;
 
   int m_shm_in;
-  int m_shm_timer;
+  //static int m_shm_timer;
 
   void *m_traffic_in;
-  void *m_traffic_timer;
+  //static void *m_traffic_timer;
 
   uint32_t m_nodeId;
   pid_t m_pid;
