@@ -21,12 +21,21 @@ void callback(void)
 int 
 main (int argc, char *argv[])
 {
-  GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
+  //GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
   //GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
 
-  /* Create 2 nodes */
+	CommandLine cmd;
+
+	uint32_t nNodes = 1;
+	cmd.AddValue("nNodes", "Number of nodes", nNodes);
+
+	cmd.Parse (argc,argv);
+	if(nNodes < 1)
+		nNodes = 1;
+
+  /* Create nNodes nodes */
   NodeContainer nodes;
-  nodes.Create(1);
+  nodes.Create(nNodes);
 
   //WifiHelper wifiHelper;
   //Ptr<WifiNetDevice> wifiDev;
@@ -36,7 +45,7 @@ main (int argc, char *argv[])
   contikiDeviceHelper.Install(nodes, "PHYOVERLAY");
 
 
-  Simulator::Stop (Seconds (60));
+  Simulator::Stop (MilliSeconds (5));
   Simulator::Run ();
   Simulator::Destroy ();
   

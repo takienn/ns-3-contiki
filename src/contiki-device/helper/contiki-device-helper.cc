@@ -71,6 +71,8 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode)
 {
   uint32_t nodeCount = nodes.GetN();
 
+  ContikiNetDevice::SetNNodes(nodeCount);
+
   /* Create Pointers */
   Ptr<ContikiNetDevice> bridge [nodeCount + 1];
   Ptr<ContikiMac> mac [nodeCount + 1];

@@ -38,11 +38,9 @@
 
 namespace ns3 {
 
-class ContikiIpcReader : public IpcReader
-{
+class ContikiIpcReader: public IpcReader {
 private:
-	IpcReader::Data DoRead (void);
-	sem_t *m_sem_in;
+	IpcReader::Data DoRead(void);
 };
 
 class Node;
@@ -56,23 +54,27 @@ class ContikiPhy;
  * an ns-3 net device via the OS sockets interface.
  *
  */
-class ContikiNetDevice : public NetDevice
-{
+class ContikiNetDevice: public NetDevice {
 public:
-	static TypeId GetTypeId (void);
+	static TypeId GetTypeId(void);
 
 	/**
 	 * Enumeration of the operating modes supported in the class.
 	 *
 	 */
 	enum Mode {
-		ILLEGAL,          /**< mode not set */
-		PHYOVERLAY,       /**< ns-3 medium emulation only */
-		MACPHYOVERLAY,    /**< ns-3 MAC-layer stack participation with medium emulation */
+		ILLEGAL, /**< mode not set */
+		PHYOVERLAY, /**< ns-3 medium emulation only */
+		MACPHYOVERLAY, /**< ns-3 MAC-layer stack participation with medium emulation */
 	};
 
-	ContikiNetDevice ();
-	virtual ~ContikiNetDevice ();
+	ContikiNetDevice();
+	virtual ~ContikiNetDevice();
+
+	static uint32_t GetNNodes(void);
+	static void SetNNodes(uint32_t);
+
+	uint32_t GetNodeId();
 
 	/**
 	 * \brief Get the bridged net device.
@@ -81,7 +83,7 @@ public:
 	 *
 	 * \returns the bridged net device.
 	 */
-	Ptr<NetDevice> GetBridgedNetDevice (void);
+	Ptr<NetDevice> GetBridgedNetDevice(void);
 
 	/**
 	 * \brief Set the executable path used with the fork/exec call.
@@ -92,7 +94,6 @@ public:
 	 * \param path The executable path
 	 */
 
-
 	/**
 	 * \brief Set the MAC layer.
 	 *
@@ -101,7 +102,7 @@ public:
 	 *
 	 * \param mac MAC layer to set
 	 */
-	void SetMac (Ptr<ContikiMac> mac);
+	void SetMac(Ptr<ContikiMac> mac);
 
 	/**
 	 * \brief Returns the attached MAC layer.
@@ -110,7 +111,7 @@ public:
 	 *
 	 * \returns the attached MAC layer
 	 */
-	Ptr<ContikiMac> GetMac (void);
+	Ptr<ContikiMac> GetMac(void);
 
 	/**
 	 * \brief Set the PHY object attached to the attached MAC layer
@@ -120,7 +121,7 @@ public:
 	 *
 	 * \param phy PHY to set
 	 */
-	void SetPhy (Ptr<ContikiPhy> phy);
+	void SetPhy(Ptr<ContikiPhy> phy);
 
 	/**
 	 * \brief Returns the attached PHY object.
@@ -129,7 +130,7 @@ public:
 	 *
 	 * \returns the attached PHY object
 	 */
-	Ptr<ContikiPhy> GetPhy (void);
+	Ptr<ContikiPhy> GetPhy(void);
 
 	/**
 	 * \brief Set the ns-3 net device to bridge.
@@ -139,7 +140,7 @@ public:
 	 *
 	 * \param bridgedDevice device to set
 	 */
-	void SetBridgedNetDevice (Ptr<NetDevice> bridgedDevice);
+	void SetBridgedNetDevice(Ptr<NetDevice> bridgedDevice);
 
 	/**
 	 * \brief Pass packets from underlying layers into the bridge to be sent to the socket.
@@ -154,7 +155,9 @@ public:
 	 * \param dst Destination address of the packet
 	 * \param packetType Type of the packet in terms of transmission (i.e. unicast, broadcast, etc.)
 	 */
-	bool ReceiveFromBridgedDevice (Ptr<NetDevice> device, Ptr<const Packet> packet, uint16_t protocol, Address const &src, Address const &dst, PacketType packetType);
+	bool ReceiveFromBridgedDevice(Ptr<NetDevice> device,
+			Ptr<const Packet> packet, uint16_t protocol, Address const &src,
+			Address const &dst, PacketType packetType);
 
 	/**
 	 * \brief Set a start time for the device.
@@ -168,7 +171,7 @@ public:
 	 *
 	 * \param tStart the start time
 	 */
-	void Start (Time tStart);
+	void Start(Time tStart);
 
 	/**
 	 * Set a stop time for the device.
@@ -177,58 +180,98 @@ public:
 	 *
 	 * \see SocketBridge::Start
 	 */
-	void Stop (Time tStop);
+	void Stop(Time tStop);
 
 	/**
 	 * Set the operating mode of this device.
 	 *
 	 * \param mode The operating mode of this device.
 	 */
-	void SetMode (std::string mode);
+	void SetMode(std::string mode);
 
 	/**
 	 * Get the operating mode of this device.
 	 *
 	 * \returns The operating mode of this device.
 	 */
-	ContikiNetDevice::Mode  GetMode (void);
+	ContikiNetDevice::Mode GetMode(void);
 
 	//
 	// The following methods are inherited from NetDevice base class and are
 	// documented there.
 	//
-	virtual void SetIfIndex (const uint32_t index);
-	virtual uint32_t GetIfIndex (void) const;
-	virtual Ptr<Channel> GetChannel (void) const;
-	virtual void SetAddress (Address address);
-	virtual Address GetAddress (void) const;
-	virtual bool SetMtu (const uint16_t mtu);
-	virtual uint16_t GetMtu (void) const;
-	virtual bool IsLinkUp (void) const;
-	virtual void AddLinkChangeCallback (Callback<void> callback);
-	virtual bool IsBroadcast (void) const;
-	virtual Address GetBroadcast (void) const;
-	virtual bool IsMulticast (void) const;
-	virtual Address GetMulticast (Ipv4Address multicastGroup) const;
-	virtual bool IsPointToPoint (void) const;
-	virtual bool IsBridge (void) const;
-	virtual bool Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
-	virtual bool SendFrom (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber);
-	virtual Ptr<Node> GetNode (void) const;
-	virtual void SetNode (Ptr<Node> node);
-	virtual bool NeedsArp (void) const;
-	virtual void SetReceiveCallback (NetDevice::ReceiveCallback cb);
-	virtual void SetPromiscReceiveCallback (NetDevice::PromiscReceiveCallback cb);
-	virtual bool SupportsSendFrom () const;
-	virtual Address GetMulticast (Ipv6Address addr) const;
+	virtual void SetIfIndex(const uint32_t index);
+	virtual uint32_t GetIfIndex(void) const;
+	virtual Ptr<Channel> GetChannel(void) const;
+	virtual void SetAddress(Address address);
+	virtual Address GetAddress(void) const;
+	virtual bool SetMtu(const uint16_t mtu);
+	virtual uint16_t GetMtu(void) const;
+	virtual bool IsLinkUp(void) const;
+	virtual void AddLinkChangeCallback(Callback<void> callback);
+	virtual bool IsBroadcast(void) const;
+	virtual Address GetBroadcast(void) const;
+	virtual bool IsMulticast(void) const;
+	virtual Address GetMulticast(Ipv4Address multicastGroup) const;
+	virtual bool IsPointToPoint(void) const;
+	virtual bool IsBridge(void) const;
+	virtual bool Send(Ptr<Packet> packet, const Address& dest,
+			uint16_t protocolNumber);
+	virtual bool SendFrom(Ptr<Packet> packet, const Address& source,
+			const Address& dest, uint16_t protocolNumber);
+	virtual Ptr<Node> GetNode(void) const;
+	virtual void SetNode(Ptr<Node> node);
+	virtual bool NeedsArp(void) const;
+	virtual void SetReceiveCallback(NetDevice::ReceiveCallback cb);
+	virtual void SetPromiscReceiveCallback(
+			NetDevice::PromiscReceiveCallback cb);
+	virtual bool SupportsSendFrom() const;
+	virtual Address GetMulticast(Ipv6Address addr) const;
+
+	/**
+	 * \internal
+	 * semaphore for time update operations
+	 */
+	static sem_t *m_sem_time;
+
+	/**
+	 * \internal
+	 * semaphore for timer scheduling operations
+	 */
+	static sem_t *m_sem_timer;
+
+	/**
+	 * \internal
+	 * Shared Memory Object for time
+	 */
+	static int m_shm_time;
+
+	/**
+	 * \internal
+	 * The pointer to a shared memory address where to synchronize
+	 * current simulation time value.
+	 */
+	static void *m_traffic_time;
+
+	static sem_t *m_sem_go;
+	static sem_t *m_sem_done;
+
+	/**
+	 * \internal
+	 *
+	 * Number of ContikiDevice Nodes
+	 */
+	static uint32_t m_nNodes;
+
 
 protected:
-	virtual void DoDispose (void);
+	virtual void DoDispose(void);
 
-
-	bool DiscardFromBridgedDevice (Ptr<NetDevice> device, Ptr<const Packet> packet, uint16_t protocol, Address const &src);
+	bool DiscardFromBridgedDevice(Ptr<NetDevice> device,
+			Ptr<const Packet> packet, uint16_t protocol, Address const &src);
 
 private:
+
 
 	/**
 	 * \internal
@@ -237,14 +280,14 @@ private:
 	 * If this method returns, Contiki Process should be able to open and map the same memory segments
 	 * so that an IPC can be done.
 	 */
-	void CreateIpc (void);
+	void CreateIpc(void);
 
 	/**
 	 * \internal
 	 * Clear the file descriptors for the shared memory segments
 	 * and unmap the corresponding addresses and unlinking the semaphores
 	 */
-	void ClearIpc (void);
+	void ClearIpc(void);
 	/**
 	 * \internal
 	 *
@@ -253,28 +296,28 @@ private:
 	 * \param oldValue Old time value
 	 * \param newValue New time value
 	 */
-	void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
+	static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
 
 	/**
 	 * \internal
 	 *
 	 * Spin up the device
 	 */
-	void StartContikiDevice (void);
+	void StartContikiDevice(void);
 
 	/**
 	 * \internal
 	 *
 	 * Tear down the device
 	 */
-	void StopContikiDevice (void);
+	void StopContikiDevice(void);
 
 	/**
 	 * \internal
 	 *
 	 * Callback to process packets that are read
 	 */
-	void ReadCallback (uint8_t *buf, ssize_t len);
+	void ReadCallback(uint8_t *buf, ssize_t len);
 
 	/*
 	 * \internal
@@ -286,7 +329,7 @@ private:
 	 *            received from the host.
 	 * \param buf The length of the buffer.
 	 */
-	void ForwardToBridgedDevice (uint8_t *buf, ssize_t len);
+	void ForwardToBridgedDevice(uint8_t *buf, ssize_t len);
 
 	/**
 	 * \internal
@@ -305,7 +348,8 @@ private:
 	 * \param type   A pointer to the variable that will get the packet type from
 	 *               the Layer 2 header.
 	 */
-	Ptr<Packet> Filter (Ptr<Packet> packet, Address *src, Address *dst, uint16_t *type);
+	Ptr<Packet> Filter(Ptr<Packet> packet, Address *src, Address *dst,
+			uint16_t *type);
 
 	/**
 	 * \internal
@@ -336,7 +380,6 @@ private:
 	 */
 	Ptr<Node> m_node;
 
-
 	/**
 	 * \internal
 	 *
@@ -365,13 +408,6 @@ private:
 
 	/**
 	 * \internal
-	 * The pointer to a shared memory address where to synchronize
-	 * current simulation time value.
-	 */
-	//static void *m_traffic_time ;
-
-	/**
-	 * \internal
 	 * Shared Memory Object for input traffic
 	 */
 	int m_shm_in;
@@ -384,9 +420,9 @@ private:
 
 	/**
 	 * \internal
-	 * Shared Memory Object for time
+	 * Shared Memory Onject for timers
 	 */
-	int m_shm_time;
+	int m_shm_timer;
 
 	/**
 	 * \internal
@@ -408,6 +444,12 @@ private:
 
 	/**
 	 * \internal
+	 * Name of timer shared memory segment
+	 */
+	std::stringstream m_shm_timer_name;
+
+	/**
+	 * \internal
 	 * Semaphore for writing operations
 	 */
 	sem_t *m_sem_out;
@@ -417,12 +459,6 @@ private:
 	 * Semaphore for reading operations
 	 */
 	sem_t *m_sem_in;
-
-	/**
-	 * \internal
-	 * semaphore for time update operations
-	 */
-	sem_t *m_sem_time;
 
 	/**
 	 * \internal
@@ -441,6 +477,12 @@ private:
 	 * Name of time semaphore
 	 */
 	std::stringstream m_sem_time_name;
+
+	/**
+	 * \internal
+	 * Name of timer semaphore
+	 */
+	std::stringstream m_sem_timer_name;
 
 	/*
 	 * \internal
@@ -570,6 +612,5 @@ private:
 };
 
 } // namespace ns3
-
 
 #endif	/* CONTIKI_NET_DEVICE */
