@@ -24,7 +24,8 @@ public:
 protected:
     virtual void Notify (void)
     {
-      (*m_function)();
+    	if (m_function !=0)
+    		(*m_function)();
     }
 private:
     F m_function;

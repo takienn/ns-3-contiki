@@ -1,0 +1,53 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+import os.path
+
+def configure(conf):
+	conf.env.append_value("LINKFLAGS", ["-lcontiki-ns3"])
+	
+
+
+def build(bld):
+    module = bld.create_ns3_module('contiki-device', ['network', 'internet'])
+    module.source = [
+        'model/contiki-device.cc',
+        'model/contiki-channel.cc',
+        'model/contiki-mac.cc',
+        'model/contiki-phy.cc',
+        'model/ipc-reader.cc',
+#        'model/interference-helper.cc',
+        'helper/contiki-device-helper.cc',
+        'helper/contiki-channel-helper.cc',
+        'helper/contiki-phy-helper.cc',
+        'helper/contiki-mac-helper.cc'
+        ]
+
+    #module_test = bld.create_ns3_module_test_library('contiki-device')
+    #module_test.source = [
+        #'test/contiki-device-test-suite.cc',
+     #   ]
+
+    headers = bld(features='ns3header')
+    headers.module = 'contiki-device'
+    headers.source = [
+        'model/contiki-device.h',
+        'model/contiki-channel.h',
+        'model/contiki-mac.h',
+        'model/contiki-phy.h',
+        'model/ipc-reader.h',
+#        'model/interference-helper.h',
+        'helper/contiki-device-helper.h',
+        'helper/contiki-channel-helper.h',
+        'helper/contiki-phy-helper.h',
+        'helper/contiki-mac-helper.h'
+        ]
+
+    bld.env.append_value("LINKFLAGS", ["libcontiki-ns3.so"])
+
+    #if bld.env.ENABLE_EXAMPLES:
+     #   bld.add_subdirs('examples')
+
+    # bld.ns3_python_bindings()
+
