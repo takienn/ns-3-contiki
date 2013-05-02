@@ -46,6 +46,9 @@ DefaultSimulatorImpl::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::DefaultSimulatorImpl")
     .SetParent<SimulatorImpl> ()
     .AddConstructor<DefaultSimulatorImpl> ()
+    .AddTraceSource("CurrentTs", 
+                    "Current Simulator Time", 
+                    MakeTraceSourceAccessor(&DefaultSimulatorImpl::m_currentTsTrace))
   ;
   return tid;
 }
@@ -62,6 +65,7 @@ DefaultSimulatorImpl::DefaultSimulatorImpl ()
   // before ::Run is entered, the m_currentUid will be zero
   m_currentUid = 0;
   m_currentTs = 0;
+  m_currentTsTrace = m_currentTs;
   m_currentContext = 0xffffffff;
   m_unscheduledEvents = 0;
   m_eventsWithContextEmpty = true;
@@ -135,6 +139,7 @@ DefaultSimulatorImpl::ProcessOneEvent (void)
 
   NS_LOG_LOGIC ("handle " << next.key.m_ts);
   m_currentTs = next.key.m_ts;
+  m_currentTsTrace = m_currentTs;
   m_currentContext = next.key.m_context;
   m_currentUid = next.key.m_uid;
   next.impl->Invoke ();

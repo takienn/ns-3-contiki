@@ -28,6 +28,7 @@
 #include "ns3/system-mutex.h"
 
 #include "ptr.h"
+#include "traced-value.h"
 
 #include <list>
 
@@ -83,6 +84,7 @@ private:
   uint32_t m_uid;
   uint32_t m_currentUid;
   uint64_t m_currentTs;
+  TracedValue<uint64_t> m_currentTsTrace;
   uint32_t m_currentContext;
   // number of events that have been inserted but not yet scheduled,
   // not counting the "destroy" events; this is used for validation

@@ -30,7 +30,7 @@ main (int argc, char *argv[])
   LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
-  NodeContainer nodes;
+  ContikiNodeContainer nodes;
   nodes.Create (2);
 
   PointToPointHelper pointToPoint;
