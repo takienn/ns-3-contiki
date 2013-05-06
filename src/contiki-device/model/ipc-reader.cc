@@ -96,10 +96,10 @@ void IpcReader::Stop(void) {
 void IpcReader::Run(void) {
 
 	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
-	//m_shm_timer_name << "/ns_contiki_traffic_timer_";// << m_nodeId;
+	m_shm_timer_name << "/ns_contiki_traffic_timer_";// << m_nodeId;
 
 	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
-	//m_sem_timer_name << "/ns_contiki_sem_timer_";// << m_nodeId;
+	m_sem_timer_name << "/ns_contiki_sem_timer_";// << m_nodeId;
 
 	size_t m_traffic_size = 65536;
 			//m_time_size = 8;
@@ -107,14 +107,14 @@ void IpcReader::Run(void) {
 	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(), O_RDWR, 0)) == -1)
 			perror("thread shm_open(shm_in) error");
 
-	//if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0)) == -1)
-		//		perror("thread shm_open(shm_timer)");
+//	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0)) == -1)
+//				perror("thread shm_open(shm_timer)");
 
 	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), 0)) == SEM_FAILED)
 		perror("thread sem_open(m_sem_in) error");
 
-	//if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), 0)) == SEM_FAILED)
-		//perror("thread sem_open(m_sem_timer) error");
+//	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), 0)) == SEM_FAILED)
+//		perror("thread sem_open(m_sem_timer) error");
 
 
 	m_traffic_in = mmap(NULL,
@@ -124,12 +124,12 @@ void IpcReader::Run(void) {
 						m_shm_in,
 						0);
 
-	//m_traffic_timer = mmap(NULL,
-		//				m_time_size,
-			//			PROT_READ | PROT_WRITE,
-				//		MAP_SHARED,
-					//	m_shm_timer,
-						//0);
+//	m_traffic_timer = mmap(NULL,
+//						m_time_size,
+//						PROT_READ | PROT_WRITE,
+//						MAP_SHARED,
+//						m_shm_timer,
+//						0);
 
 	for (;;) {
 
@@ -140,24 +140,24 @@ void IpcReader::Run(void) {
 
 		/////////////////////////////////////////////////////////
 
-		// Checking if contiki requested to schedule a timer
-		//uint64_t timerval = 0;
-/*
-		if (sem_wait(m_sem_timer) == -1)
-			NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
-
-		memcpy(&timerval, m_traffic_timer, 8);
-
-		memset(m_traffic_timer, 0, 8);
-
-		if (sem_post(m_sem_timer) == -1)
-			NS_FATAL_ERROR("sem_post(): error" << strerror (errno));
-
-		if(timerval > 0)
-			SetTimer(timerval, 0);
+//		// Checking if contiki requested to schedule a timer
+//		uint64_t timerval = 0;
+//
+//		if (sem_wait(m_sem_timer) == -1)
+//			NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
+//
+//		memcpy(&timerval, m_traffic_timer, 8);
+//
+//		memset(m_traffic_timer, 0, 8);
+//
+//		if (sem_post(m_sem_timer) == -1)
+//			NS_FATAL_ERROR("sem_post(): error" << strerror (errno));
+//
+//		if(timerval > 0)
+//			SetTimer(timerval, 0);
 
 		//////////////////////////////////////////////////////////
-*/
+
 		// Processing traffic sent by contiki
 
 		struct IpcReader::Data data = DoRead();
@@ -179,7 +179,10 @@ void IpcReader::CheckTimer(void) {
 
 void IpcReader::SetTimer(uint64_t time, int type) {
 
-	Simulator::ScheduleWithContext(m_nodeId,NanoSeconds(time), &IpcReader::SendAlarm, this);
+	void (*f)(void) = 0;
+
+	Simulator::ScheduleWithContext(m_nodeId,NanoSeconds(time), f);
+	//Simulator::ScheduleWithContext(m_nodeId,NanoSeconds(time), &IpcReader::SendAlarm, this);
 }
 
 void IpcReader::SendAlarm(void) {

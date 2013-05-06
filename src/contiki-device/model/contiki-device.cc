@@ -223,27 +223,20 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 		memcpy(m_traffic_time, (void *) &newValue, 8);
-		//if (kill(child, SIGCONT) == -1)
-			//	NS_FATAL_ERROR("kill(child, SIGCONT) failed " << strerror(errno));
-		//m_sem_go = sem_open("/ns_contiki_sem_go_", O_CREAT,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, GetNNodes());
 
 		for (uint32_t i=0; i<N; i++)
 		{
-			sem_trywait(m_sem_done);
+			sem_wait(m_sem_done);
 			sem_post(m_sem_go);
 		}
-
-		//while(rtval)
-			//sem_post(m_sem_go);
-
 
 	if (sem_post(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 	//This trick is to force ns-3 to go in slow motion so that
 	//Contiki can follow
-	//NS_LOG_UNCOND("NS-3 time is " << newValue);
-	//void (*f)(void) = 0;
-	//Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
+	NS_LOG_UNCOND("NS-3 time is " << newValue);
+	void (*f)(void) = 0;
+	Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
 
 
 }
@@ -379,7 +372,7 @@ void ContikiNetDevice::CreateIpc(void) {
 //	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), O_CREAT,
 //			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
 //		NS_FATAL_ERROR(
-//				"ns -3 sem_open() failed: " << strerror(errno) << m_sem_time_name.str());
+//				"ns -3 sem_open() failed: " << strerror(errno) << m_sem_timer_name.str());
 	if((m_sem_go = sem_open("/ns_contiki_sem_go_", O_CREAT,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
 		NS_FATAL_ERROR(
