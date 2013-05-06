@@ -45,7 +45,7 @@ main (int argc, char *argv[])
   contikiDeviceHelper.Install(nodes, "PHYOVERLAY");
 
 
-  Simulator::Stop (MilliSeconds (5));
+  Simulator::Stop (Seconds (5));
   Simulator::Run ();
   Simulator::Destroy ();
   
