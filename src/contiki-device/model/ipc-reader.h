@@ -40,7 +40,7 @@ public:
    * \param readCallback A callback to invoke when new data is
    * available.
    */
-  void Start (void *addr, Callback<void, uint8_t *, ssize_t> readCallback, uint32_t nodeId, pid_t pid);
+  void Start (Callback<void, char *, ssize_t> readCallback, uint32_t nodeId, pid_t pid);
 
   /**
    * Stop the read thread and reset internal state.  This does not
@@ -76,8 +76,8 @@ protected:
   struct Data
   {
     Data () : m_buf (0), m_len (0) {}
-    Data (uint8_t *buf, ssize_t len) : m_buf (buf), m_len (len) {}
-    uint8_t *m_buf;
+    Data (char *buf, ssize_t len) : m_buf (buf), m_len (len) {}
+    char *m_buf;
     ssize_t m_len;
   };
 
@@ -109,8 +109,8 @@ protected:
   int m_shm_in;
   int m_shm_timer;
 
-  void *m_traffic_in;
-  void *m_traffic_timer;
+  char *m_traffic_in;
+  char *m_traffic_timer;
 
   uint32_t m_nodeId;
   pid_t m_pid;
@@ -120,7 +120,7 @@ private:
   void Run (void);
   void DestroyEvent (void);
 
-  Callback<void, uint8_t *, ssize_t> m_readCallback;
+  Callback<void, char *, ssize_t> m_readCallback;
   Ptr<SystemThread> m_readThread, m_writeThread;
   int m_evpipe[2];           // pipe used to signal events between threads
   bool m_stop;               // true means the read thread should stop
