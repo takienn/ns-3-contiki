@@ -37,14 +37,13 @@ int IpcReader::m_shm_timer = 0;
 void *IpcReader::m_traffic_timer = NULL;
 */
 
-void IpcReader::Start(void *addr,
-		Callback<void, uint8_t *, ssize_t> readCallback, uint32_t nodeId,
+void IpcReader::Start(
+		Callback<void, char *, ssize_t> readCallback, uint32_t nodeId,
 		pid_t pid) {
 
 	NS_ASSERT_MSG(m_readThread == 0, "ipc read thread already exists");
 	//NS_ASSERT_MSG (m_writeThread == 0, "ipc write thread already exists");
 
-	m_traffic_in = addr;
 	m_readCallback = readCallback;
 	m_nodeId = nodeId;
 	m_pid = pid;
@@ -101,35 +100,35 @@ void IpcReader::Run(void) {
 	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
 	m_sem_timer_name << "/ns_contiki_sem_timer_";// << m_nodeId;
 
-	size_t m_traffic_size = 65536;
-			//m_time_size = 8;
+	size_t m_traffic_size = 65536,
+			m_time_size = 8;
 
 	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(), O_RDWR, 0)) == -1)
 			perror("thread shm_open(shm_in) error");
 
-//	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0)) == -1)
-//				perror("thread shm_open(shm_timer)");
+	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0)) == -1)
+				perror("thread shm_open(shm_timer)");
 
 	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), 0)) == SEM_FAILED)
 		perror("thread sem_open(m_sem_in) error");
 
-//	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), 0)) == SEM_FAILED)
-//		perror("thread sem_open(m_sem_timer) error");
+	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), 0)) == SEM_FAILED)
+		perror("thread sem_open(m_sem_timer) error");
 
 
-	m_traffic_in = mmap(NULL,
+	m_traffic_in = (char *)mmap(NULL,
 						m_traffic_size,
 						PROT_READ | PROT_WRITE,
 						MAP_SHARED,
 						m_shm_in,
 						0);
 
-//	m_traffic_timer = mmap(NULL,
-//						m_time_size,
-//						PROT_READ | PROT_WRITE,
-//						MAP_SHARED,
-//						m_shm_timer,
-//						0);
+	m_traffic_timer = (char *)mmap(NULL,
+						m_time_size,
+						PROT_READ | PROT_WRITE,
+						MAP_SHARED,
+						m_shm_timer,
+						0);
 
 	for (;;) {
 
@@ -140,21 +139,21 @@ void IpcReader::Run(void) {
 
 		/////////////////////////////////////////////////////////
 
-//		// Checking if contiki requested to schedule a timer
-//		uint64_t timerval = 0;
-//
-//		if (sem_wait(m_sem_timer) == -1)
-//			NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
-//
-//		memcpy(&timerval, m_traffic_timer, 8);
-//
-//		memset(m_traffic_timer, 0, 8);
-//
-//		if (sem_post(m_sem_timer) == -1)
-//			NS_FATAL_ERROR("sem_post(): error" << strerror (errno));
-//
-//		if(timerval > 0)
-//			SetTimer(timerval, 0);
+		// Checking if contiki requested to schedule a timer
+		uint64_t timerval = 0;
+
+		if (sem_wait(m_sem_timer) == -1)
+			NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
+
+		memcpy(&timerval, m_traffic_timer, 8);
+
+		memset(m_traffic_timer, 0, 8);
+
+		if (sem_post(m_sem_timer) == -1)
+			NS_FATAL_ERROR("sem_post(): error" << strerror (errno));
+
+		if(timerval > 0)
+			SetTimer(timerval, 0);
 
 		//////////////////////////////////////////////////////////
 

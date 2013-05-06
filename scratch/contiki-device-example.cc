@@ -27,7 +27,10 @@ main (int argc, char *argv[])
 	CommandLine cmd;
 
 	uint32_t nNodes = 1;
+	uint32_t sTime = 60000; // default 6 seconds
+
 	cmd.AddValue("nNodes", "Number of nodes", nNodes);
+	cmd.AddValue("sTime", "Simulation time", sTime);
 
 	cmd.Parse (argc,argv);
 	if(nNodes < 1)
@@ -45,7 +48,7 @@ main (int argc, char *argv[])
   contikiDeviceHelper.Install(nodes, "PHYOVERLAY");
 
 
-  Simulator::Stop (Seconds (5));
+  Simulator::Stop (MilliSeconds (sTime));
   Simulator::Run ();
   Simulator::Destroy ();
   
