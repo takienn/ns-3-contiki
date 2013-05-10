@@ -23,11 +23,12 @@ main (int argc, char *argv[])
 {
   //GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
   //GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
+  LogComponentEnable("DefaultSimulatorImpl", LOG_LEVEL_LOGIC);
 
 	CommandLine cmd;
 
 	uint32_t nNodes = 1;
-	uint32_t sTime = 60000; // default 6 seconds
+	uint32_t sTime = 6000000; // default 6 seconds
 
 	cmd.AddValue("nNodes", "Number of nodes", nNodes);
 	cmd.AddValue("sTime", "Simulation time", sTime);
