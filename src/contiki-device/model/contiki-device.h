@@ -251,7 +251,7 @@ public:
 	 * The pointer to a shared memory address where to synchronize
 	 * current simulation time value.
 	 */
-	static char *m_traffic_time;
+	static unsigned char *m_traffic_time;
 
 	static sem_t *m_sem_go;
 	static sem_t *m_sem_done;
@@ -317,7 +317,7 @@ private:
 	 *
 	 * Callback to process packets that are read
 	 */
-	void ReadCallback(char *buf, ssize_t len);
+	void ReadCallback(unsigned char *buf, ssize_t len);
 
 	/*
 	 * \internal
@@ -398,13 +398,13 @@ private:
 	 * \internal
 	 * The pointer to a shared memory address where to receive traffic from.
 	 */
-	char *m_traffic_in;
+	unsigned char *m_traffic_in;
 
 	/**
 	 * \internal
 	 * The pointer to a shared memory address where to send traffic to.
 	 */
-	char *m_traffic_out;
+	unsigned char *m_traffic_out;
 
 	/**
 	 * \internal
@@ -460,6 +460,8 @@ private:
 	 */
 	sem_t *m_sem_in;
 
+	std::stringstream m_sem_go_name;
+		std::stringstream m_sem_done_name;
 	/**
 	 * \internal
 	 * Name of input semaphore

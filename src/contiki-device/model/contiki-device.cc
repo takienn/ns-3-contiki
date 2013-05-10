@@ -18,25 +18,33 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 	NS_LOG_FUNCTION_NOARGS ();
 
 	uint32_t bufferSize = 65536;
-	char *buf = (char *)malloc(bufferSize);
-	//char *buf = (char *)malloc(bufferSize);
+	unsigned char *buf = (unsigned char *) malloc(bufferSize);
+	memset(buf, 0, bufferSize);
+
 	NS_ABORT_MSG_IF(buf == 0, "malloc() failed");
 
-	size_t input_size;
+	size_t input_size = 0;
 
-	if (sem_wait(m_sem_in) == -1)
-		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
+	fflush(stdout);
+	int rtval;
+	sem_getvalue(m_sem_traffic_done, &rtval);
+	if (rtval == 1) {
+		if (sem_wait(m_sem_in) == -1)
+			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
-	// First read input size
-	memcpy(&input_size, m_traffic_in, sizeof(size_t));
+		// First read input size
+		memcpy(&input_size, m_traffic_in, sizeof(size_t));
 
-	// Now read input
-	memcpy(buf, m_traffic_in + sizeof(size_t),
-			input_size);
-	memset(m_traffic_in, 0, bufferSize);
+		// Now read input
+		memcpy(buf, m_traffic_in + sizeof(size_t), input_size);
+		memset(m_traffic_in, 0, bufferSize);
 
-	if (sem_post(m_sem_in) == -1)
-		NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
+		if (sem_post(m_sem_in) == -1)
+			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
+
+		sem_wait(m_sem_traffic_done);
+		sem_post(m_sem_traffic_go);
+	}
 
 	if (input_size == 0) {
 		NS_LOG_INFO ("ContikiNetDeviceFdReader::DoRead(): done");
@@ -45,8 +53,8 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 		//len = 0;
 	}
 
-	if(input_size > 0)
-		NS_LOG_UNCOND("read data " << *buf << " of length " << input_size);
+	if (input_size > 0)
+		NS_LOG_UNCOND("read data of length " << input_size);
 	return IpcReader::Data(buf, input_size);
 }
 
@@ -72,7 +80,7 @@ sem_t* ContikiNetDevice::m_sem_timer = NULL;
 sem_t* ContikiNetDevice::m_sem_go = NULL;
 sem_t* ContikiNetDevice::m_sem_done = NULL;
 int ContikiNetDevice::m_shm_time = 0;
-char *ContikiNetDevice::m_traffic_time = 0;
+unsigned char *ContikiNetDevice::m_traffic_time = 0;
 uint32_t ContikiNetDevice::m_nNodes = 0;
 
 ContikiNetDevice::ContikiNetDevice() :
@@ -143,7 +151,7 @@ void ContikiNetDevice::Start(Time tStart) {
 		char c_nodeId[128];
 		strcpy(c_nodeId, ss.str().c_str());
 
-		//char path[128] = "/home/kentux/mercurial/contiki-original/examples/udp-ipv6/udp-client.ns3";
+		//char path[128] = "/home/kentux/mercurial/contiki-original/examples/ns3-ping6/example-ping6.ns3";
 
 		//execlp(path,path,c_nodeId, "0","", NULL);
 		ContikiMain(c_nodeId, 0);
@@ -159,7 +167,7 @@ void ContikiNetDevice::Start(Time tStart) {
 			&ContikiNetDevice::StartContikiDevice, this);
 
 	void (*f)(void) = 0;
-	Simulator::ScheduleWithContext(m_nodeId, MilliSeconds(1.0), f);
+	Simulator::ScheduleWithContext(m_nodeId, NanoSeconds(1.0), f);
 }
 
 void ContikiNetDevice::Stop(Time tStop) {
@@ -192,11 +200,12 @@ void ContikiNetDevice::StartContikiDevice(void) {
 	//
 	// Now spin up a read thread to read packets from the tap device.
 	//
-	NS_ABORT_MSG_IF(m_ipcReader != 0, "ContikiNetDevice::StartContikiDevice(): Receive thread is already running");
-	NS_LOG_LOGIC ("Spinning up read thread");
+	NS_ABORT_MSG_IF(m_ipcReader != 0,
+			"ContikiNetDevice::StartContikiDevice(): Receive thread is already running");NS_LOG_LOGIC ("Spinning up read thread");
 
 	m_ipcReader = Create<ContikiIpcReader>();
-	m_ipcReader->Start(MakeCallback(&ContikiNetDevice::ReadCallback, this), m_nodeId, child);
+	m_ipcReader->Start(MakeCallback(&ContikiNetDevice::ReadCallback, this),
+			m_nodeId, child);
 
 	//Ordering contiki to continue, now that all preparations are ready.
 	//NS_LOG_UNCOND("Resuming child " << child);
@@ -214,29 +223,49 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 
 	uint32_t N = GetNNodes();
 
-	sem_getvalue(m_sem_done, &rtval);
-	while ((uint32_t) (rtval) < N) {
-		sem_getvalue(m_sem_done, &rtval);
-		usleep(10);
-	}
+	/* For the first time */
+//	if (oldValue == 0) {
+//		sem_getvalue(m_sem_done, &rtval);
+//		while ((uint32_t) (rtval) < N) {
+//			sem_getvalue(m_sem_done, &rtval);
+//			//usleep(10);
+//		}
+//	}
 
 	if (sem_wait(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 	memcpy(m_traffic_time, (void *) &newValue, 8);
 
-	for (uint32_t i = 0; i < N; i++) {
+//	for (uint32_t i = 0; i < N && oldValue == 0; i++) {
+//		sem_wait(m_sem_done);
+//		sem_post(m_sem_go);
+//	}
+
+	if (sem_post(m_sem_time) == -1)
+		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
+
+	//NS_LOG_UNCOND("ns-3 waiting for contiki at " << Simulator::Now());
+	//fflush(stdout);
+	if(sem_getvalue(m_sem_done, &rtval) == -1)
+		perror("sem_getvalue(m_sem_done) error");
+	while ((uint32_t) (rtval) < N) {
+		sem_getvalue(m_sem_done, &rtval);
+		usleep(10);
+	}
+	//NS_LOG_UNCOND("ns-3 got contiki");
+	//fflush(stdout);
+
+	for (uint32_t i = 0; i < N && oldValue == 0; i++) {
 		sem_wait(m_sem_done);
 		sem_post(m_sem_go);
 	}
 
-	if (sem_post(m_sem_time) == -1)
-		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 	//This trick is to force ns-3 to go in slow motion so that
 	//Contiki can follow
-	//NS_LOG_UNCOND("NS-3 time is " << newValue);
-	//void (*f)(void) = 0;
-	//Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
+
+	void (*f)(void) = 0;
+	Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
 
 }
 
@@ -307,6 +336,8 @@ void ContikiNetDevice::CreateIpc(void) {
 	m_sem_out_name << "/ns_contiki_sem_out_" << m_nodeId;
 	m_sem_timer_name << "/ns_contiki_sem_timer_";	// << m_nodeId;
 	m_sem_time_name << "/ns_contiki_sem_time_";	// << m_nodeId;
+	m_sem_go_name << "/ns_contiki_sem_go_";
+	m_sem_done_name << "/ns_contiki_sem_done_";
 
 	//Assuring there are no shm/sem leftovers from previous executions
 	//ClearIpc();
@@ -347,12 +378,13 @@ void ContikiNetDevice::CreateIpc(void) {
 	 * it is saved in sizeof(size_t) memory.
 	 */
 
-	m_traffic_out = (char *) mmap(NULL, sizeof(size_t) + m_traffic_size,
-			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_out, 0);
+	m_traffic_out = (unsigned char *) mmap(NULL,
+			sizeof(size_t) + m_traffic_size, PROT_READ | PROT_WRITE, MAP_SHARED,
+			m_shm_out, 0);
 
 	//if (m_traffic_time == NULL)
-	m_traffic_time = (char *) mmap(NULL, m_time_size, PROT_READ | PROT_WRITE,
-			MAP_SHARED, m_shm_time, 0);
+	m_traffic_time = (unsigned char *) mmap(NULL, m_time_size,
+			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_time, 0);
 
 	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), O_CREAT,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
@@ -368,12 +400,11 @@ void ContikiNetDevice::CreateIpc(void) {
 	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), O_CREAT,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
 		NS_FATAL_ERROR("ns -3 sem_open(sem_timer) failed: " << strerror(errno));
-	if ((m_sem_go =
-			sem_open("/ns_contiki_sem_go_", O_CREAT,
-					S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
+	if ((m_sem_go = sem_open(m_sem_go_name.str().c_str(), O_CREAT,
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
 		NS_FATAL_ERROR("ns -3 sem_open(sem_go) failed: " << strerror(errno));
 
-	if ((m_sem_done = sem_open("/ns_contiki_sem_done_", O_CREAT,
+	if ((m_sem_done = sem_open(m_sem_done_name.str().c_str(), O_CREAT,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
 		NS_FATAL_ERROR("ns -3 sem_open(sem_done) failed: " << strerror(errno));
 
@@ -405,7 +436,7 @@ void ContikiNetDevice::ClearIpc() {
 	sem_unlink("/ns_contiki_sem_done_");
 }
 
-void ContikiNetDevice::ReadCallback(char *buf, ssize_t len) {
+void ContikiNetDevice::ReadCallback(unsigned char *buf, ssize_t len) {
 	NS_LOG_FUNCTION_NOARGS ();
 
 	NS_ASSERT_MSG(buf != 0, "invalid buf argument");

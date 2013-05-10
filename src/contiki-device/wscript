@@ -4,13 +4,8 @@
 #     pass
 import os.path
 
-def configure(conf):
-	conf.env.append_value("LINKFLAGS", ["-lcontiki-ns3"])
-	
-
-
 def build(bld):
-    module = bld.create_ns3_module('contiki-device', ['network', 'internet'])
+    module = bld.create_ns3_module('contiki-device')
     module.source = [
         'model/contiki-device.cc',
         'model/contiki-channel.cc',

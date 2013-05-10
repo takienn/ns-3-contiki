@@ -65,7 +65,7 @@ DefaultSimulatorImpl::DefaultSimulatorImpl ()
   // before ::Run is entered, the m_currentUid will be zero
   m_currentUid = 0;
   m_currentTs = 0;
-  m_currentTsTrace = m_currentTs;
+  m_currentTsTrace = 0;
   m_currentContext = 0xffffffff;
   m_unscheduledEvents = 0;
   m_eventsWithContextEmpty = true;
@@ -132,6 +132,7 @@ DefaultSimulatorImpl::GetSystemId (void) const
 void
 DefaultSimulatorImpl::ProcessOneEvent (void)
 {
+
   Scheduler::Event next = m_events->RemoveNext ();
 
   NS_ASSERT (next.key.m_ts >= m_currentTs);

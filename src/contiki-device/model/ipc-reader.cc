@@ -25,6 +25,71 @@ namespace ns3 {
 IpcReader::IpcReader() :
 		m_traffic_in(NULL), m_nodeId(0), m_pid(0), m_readCallback(0), m_readThread(
 				0), m_stop(false), m_destroyEvent() {
+
+	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
+	m_shm_timer_name << "/ns_contiki_traffic_timer_";// << m_nodeId;
+
+	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
+	m_sem_timer_name << "/ns_contiki_sem_timer_";// << m_nodeId;
+
+
+
+	size_t m_traffic_size = 65536,
+			m_time_size = 8;
+
+	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(), O_RDWR, 0)) == -1)
+			perror("thread shm_open(shm_in) error");
+
+	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0)) == -1)
+				perror("thread shm_open(shm_timer)");
+
+	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), 0)) == SEM_FAILED)
+		perror("thread sem_open(m_sem_in) error");
+
+	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), 0)) == SEM_FAILED)
+		perror("thread sem_open(m_sem_timer) error");
+
+
+	m_traffic_in = (unsigned char *)mmap(NULL,
+						m_traffic_size,
+						PROT_READ | PROT_WRITE,
+						MAP_SHARED,
+						m_shm_in,
+						0);
+
+	m_traffic_timer = (unsigned char *)mmap(NULL,
+						m_time_size,
+						PROT_READ | PROT_WRITE,
+						MAP_SHARED,
+						m_shm_timer,
+						0);
+
+
+
+
+	/////// Fuck Timers & Concurrency/////////
+
+	m_sem_timer_go_name << "/ns_contiki_sem_timer_go_" << m_nodeId;
+	m_sem_timer_done_name << "/ns_contiki_sem_timer_done_" << m_nodeId;
+
+	if ((m_sem_timer_go = sem_open(m_sem_timer_go_name.str().c_str(), O_CREAT,
+				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
+			NS_FATAL_ERROR("ns -3 sem_open(m_sem_timer_go) failed: " << strerror(errno));
+
+	if ((m_sem_timer_done = sem_open(m_sem_timer_done_name.str().c_str(), O_CREAT,
+				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
+			NS_FATAL_ERROR("ns -3 sem_open(m_sem_timer_done) failed: " << strerror(errno));
+
+	m_sem_traffic_go_name << "/ns_contiki_sem_traffic_go_" << m_nodeId;
+	m_sem_traffic_done_name << "/ns_contiki_sem_traffic_done_" << m_nodeId;
+
+	if ((m_sem_traffic_go = sem_open(m_sem_traffic_go_name.str().c_str(), O_CREAT,
+				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
+			NS_FATAL_ERROR("ns -3 sem_open(m_sem_traffic_go) failed: " << strerror(errno));
+
+	if ((m_sem_traffic_done = sem_open(m_sem_traffic_done_name.str().c_str(), O_CREAT,
+				S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
+			NS_FATAL_ERROR("ns -3 sem_open(m_sem_traffic_done_name) failed: " << strerror(errno));
 }
 
 IpcReader::~IpcReader() {
@@ -38,7 +103,7 @@ void *IpcReader::m_traffic_timer = NULL;
 */
 
 void IpcReader::Start(
-		Callback<void, char *, ssize_t> readCallback, uint32_t nodeId,
+		Callback<void, unsigned char *, ssize_t> readCallback, uint32_t nodeId,
 		pid_t pid) {
 
 	NS_ASSERT_MSG(m_readThread == 0, "ipc read thread already exists");
@@ -94,44 +159,8 @@ void IpcReader::Stop(void) {
 // This runs in a separate thread
 void IpcReader::Run(void) {
 
-	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
-	m_shm_timer_name << "/ns_contiki_traffic_timer_";// << m_nodeId;
-
-	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
-	m_sem_timer_name << "/ns_contiki_sem_timer_";// << m_nodeId;
-
-	size_t m_traffic_size = 65536,
-			m_time_size = 8;
-
-	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(), O_RDWR, 0)) == -1)
-			perror("thread shm_open(shm_in) error");
-
-	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0)) == -1)
-				perror("thread shm_open(shm_timer)");
-
-	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), 0)) == SEM_FAILED)
-		perror("thread sem_open(m_sem_in) error");
-
-	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), 0)) == SEM_FAILED)
-		perror("thread sem_open(m_sem_timer) error");
-
-
-	m_traffic_in = (char *)mmap(NULL,
-						m_traffic_size,
-						PROT_READ | PROT_WRITE,
-						MAP_SHARED,
-						m_shm_in,
-						0);
-
-	m_traffic_timer = (char *)mmap(NULL,
-						m_time_size,
-						PROT_READ | PROT_WRITE,
-						MAP_SHARED,
-						m_shm_timer,
-						0);
-
 	for (;;) {
-
+		fflush(stdout);
 		if (m_stop) {
 			// this thread is done
 			break;
@@ -155,14 +184,26 @@ void IpcReader::Run(void) {
 		if(timerval > 0)
 			SetTimer(timerval, 0);
 
+		int rtval;
+
+		/* For the first time */
+		sem_getvalue(m_sem_timer_done, &rtval);
+		if(rtval == 1)
+		{
+			sem_wait(m_sem_timer_done);
+			sem_post(m_sem_timer_go);
+		}
+
 		//////////////////////////////////////////////////////////
 
 		// Processing traffic sent by contiki
 
 		struct IpcReader::Data data = DoRead();
+
 		// reading stops when m_len is zero
 		if (data.m_len == 0) {
-			break;
+			NS_LOG_INFO("read data of size 0");
+			//break;
 		}
 		// the callback is only called when m_len is positive (data
 		// is ignored if m_len is negative)
@@ -180,8 +221,11 @@ void IpcReader::SetTimer(uint64_t time, int type) {
 
 	void (*f)(void) = 0;
 
-	Simulator::ScheduleWithContext(m_nodeId,NanoSeconds(time), f);
+	//XXX schedule 1 millisecond after the requested time
+	// so that contiki timers can expire
+	Simulator::ScheduleWithContext(m_nodeId,MilliSeconds(time + 1), f);
 	//Simulator::ScheduleWithContext(m_nodeId,NanoSeconds(time), &IpcReader::SendAlarm, this);
+	NS_LOG_UNCOND("SetTimer " << time);
 }
 
 void IpcReader::SendAlarm(void) {
