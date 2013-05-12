@@ -23,7 +23,7 @@ main (int argc, char *argv[])
 {
   //GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
   //GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
-  LogComponentEnable("DefaultSimulatorImpl", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("DefaultSimulatorImpl", LOG_LEVEL_LOGIC);
 
 	CommandLine cmd;
 

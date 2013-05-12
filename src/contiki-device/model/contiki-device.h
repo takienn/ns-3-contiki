@@ -230,6 +230,16 @@ public:
 
 	/**
 	 * \internal
+	 *
+	 * This a sink where changes in simulation time are received from CurrentTs trace source
+	 * and written to the corresponding shared memory segment to synchronize contiki's clock.
+	 * \param oldValue Old time value
+	 * \param newValue New time value
+	 */
+	static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
+
+	/**
+	 * \internal
 	 * semaphore for time update operations
 	 */
 	static sem_t *m_sem_time;
@@ -263,7 +273,6 @@ public:
 	 */
 	static uint32_t m_nNodes;
 
-
 protected:
 	virtual void DoDispose(void);
 
@@ -271,7 +280,6 @@ protected:
 			Ptr<const Packet> packet, uint16_t protocol, Address const &src);
 
 private:
-
 
 	/**
 	 * \internal
@@ -288,15 +296,6 @@ private:
 	 * and unmap the corresponding addresses and unlinking the semaphores
 	 */
 	void ClearIpc(void);
-	/**
-	 * \internal
-	 *
-	 * This a sink where changes in simulation time are received from CurrentTs trace source
-	 * and written to the corresponding shared memory segment to synchronize contiki's clock.
-	 * \param oldValue Old time value
-	 * \param newValue New time value
-	 */
-	static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
 
 	/**
 	 * \internal
@@ -461,7 +460,7 @@ private:
 	sem_t *m_sem_in;
 
 	std::stringstream m_sem_go_name;
-		std::stringstream m_sem_done_name;
+	std::stringstream m_sem_done_name;
 	/**
 	 * \internal
 	 * Name of input semaphore

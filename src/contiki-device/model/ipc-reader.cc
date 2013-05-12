@@ -17,6 +17,7 @@
 #include "ns3/simulator.h"
 
 #include "ipc-reader.h"
+#include "ns3/contiki-device.h"
 
 NS_LOG_COMPONENT_DEFINE("IpcReader");
 
@@ -27,10 +28,10 @@ IpcReader::IpcReader() :
 				0), m_stop(false), m_destroyEvent() {
 
 	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
-	m_shm_timer_name << "/ns_contiki_traffic_timer_";// << m_nodeId;
+	m_shm_timer_name << "/ns_contiki_traffic_timer_" << m_nodeId;
 
 	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
-	m_sem_timer_name << "/ns_contiki_sem_timer_";// << m_nodeId;
+	m_sem_timer_name << "/ns_contiki_sem_timer_" << m_nodeId;
 
 
 
@@ -96,12 +97,6 @@ IpcReader::~IpcReader() {
 	Stop();
 }
 
-/*
-sem_t *IpcReader::m_sem_timer = NULL;
-int IpcReader::m_shm_timer = 0;
-void *IpcReader::m_traffic_timer = NULL;
-*/
-
 void IpcReader::Start(
 		Callback<void, unsigned char *, ssize_t> readCallback, uint32_t nodeId,
 		pid_t pid) {
@@ -154,6 +149,16 @@ void IpcReader::Stop(void) {
 	m_traffic_in = NULL;
 	m_readCallback.Nullify();
 	m_stop = false;
+
+	sem_close(m_sem_traffic_go);
+	sem_close(m_sem_traffic_done);
+	sem_close(m_sem_timer_go);
+	sem_close(m_sem_timer_go);
+
+	sem_unlink(m_sem_traffic_go_name.str().c_str());
+	sem_unlink(m_sem_traffic_done_name.str().c_str());
+	sem_unlink(m_sem_timer_go_name.str().c_str());
+	sem_unlink(m_sem_timer_done_name.str().c_str());
 }
 
 // This runs in a separate thread
@@ -186,12 +191,13 @@ void IpcReader::Run(void) {
 
 		int rtval;
 
-		/* For the first time */
+		/* Informing contiki that timer is set */
 		sem_getvalue(m_sem_timer_done, &rtval);
-		if(rtval == 1)
+		while(rtval > 0)
 		{
 			sem_wait(m_sem_timer_done);
 			sem_post(m_sem_timer_go);
+			sem_getvalue(m_sem_timer_done, &rtval);
 		}
 
 		//////////////////////////////////////////////////////////
@@ -223,9 +229,9 @@ void IpcReader::SetTimer(uint64_t time, int type) {
 
 	//XXX schedule 1 millisecond after the requested time
 	// so that contiki timers can expire
-	Simulator::ScheduleWithContext(m_nodeId,MilliSeconds(time + 1), f);
+	Simulator::ScheduleWithContext(m_nodeId,MilliSeconds(time), f);
 	//Simulator::ScheduleWithContext(m_nodeId,NanoSeconds(time), &IpcReader::SendAlarm, this);
-	NS_LOG_UNCOND("SetTimer " << time);
+	NS_LOG_UNCOND("SetTimer " << time << "\n");
 }
 
 void IpcReader::SendAlarm(void) {
