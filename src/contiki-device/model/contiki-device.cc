@@ -208,8 +208,6 @@ void ContikiNetDevice::StartContikiDevice(void) {
 			m_nodeId, child);
 
 	//Ordering contiki to continue, now that all preparations are ready.
-	//NS_LOG_UNCOND("Resuming child " << child);
-	//waitpid(child, &status, WUNTRACED);
 	printf("resuming child %d Node %d\n", child, m_nodeId);
 	if (kill(child, SIGCONT) == -1)
 		NS_FATAL_ERROR("kill(child, SIGCONT) failed " << strerror(errno));
@@ -219,53 +217,44 @@ void ContikiNetDevice::StartContikiDevice(void) {
 void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 		uint64_t newValue) {
 
-	int rtval;
+	int rtval; // to probe sem_done value
+	uint32_t N = GetNNodes(); // Number of nodes
 
-	uint32_t N = GetNNodes();
-
-	/* For the first time */
-//	if (oldValue == 0) {
-//		sem_getvalue(m_sem_done, &rtval);
-//		while ((uint32_t) (rtval) < N) {
-//			sem_getvalue(m_sem_done, &rtval);
-//			//usleep(10);
-//		}
-//	}
-
+	/////// Writing new time //////////////
 	if (sem_wait(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 	memcpy(m_traffic_time, (void *) &newValue, 8);
 
-//	for (uint32_t i = 0; i < N && oldValue == 0; i++) {
-//		sem_wait(m_sem_done);
-//		sem_post(m_sem_go);
-//	}
-
 	if (sem_post(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
+	///////////////////////////////////////
 
-	//NS_LOG_UNCOND("ns-3 waiting for contiki at " << Simulator::Now());
-	//fflush(stdout);
+
+	////// Waiting for contiki to live the moment /////////
+	NS_LOG_UNCOND("ns-3 waiting for contiki at " << Simulator::Now());
+	fflush(stdout);
 	if(sem_getvalue(m_sem_done, &rtval) == -1)
 		perror("sem_getvalue(m_sem_done) error");
 	while ((uint32_t) (rtval) < N) {
 		sem_getvalue(m_sem_done, &rtval);
-		usleep(10);
 	}
-	//NS_LOG_UNCOND("ns-3 got contiki");
-	//fflush(stdout);
+	NS_LOG_UNCOND("ns-3 got contiki");
+	fflush(stdout);
+	///////////////////////////////////////////////////////
 
-	for (uint32_t i = 0; i < N && oldValue == 0; i++) {
+	///// Resetting the semaphores ///////
+	for (uint32_t i = 0; i < N; i++) {
 		sem_wait(m_sem_done);
 		sem_post(m_sem_go);
 	}
+	//////////////////////////////////////
 
-	//This trick is to force ns-3 to go in slow motion so that
+	//XXX This trick is to force ns-3 to go in slow motion so that
 	//Contiki can follow
 
-	void (*f)(void) = 0;
-	Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
+	//void (*f)(void) = 0;
+	//Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
 
 }
 
@@ -329,12 +318,12 @@ void ContikiNetDevice::CreateIpc(void) {
 	// Preparing shm/sem names
 	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
 	m_shm_out_name << "/ns_contiki_traffic_out_" << m_nodeId;
-	m_shm_timer_name << "/ns_contiki_traffic_timer_";	// << m_nodeId;
+	m_shm_timer_name << "/ns_contiki_traffic_timer_" << m_nodeId;
 	m_shm_time_name << "/ns_contiki_traffic_time_";	// << m_nodeId;
 
 	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
 	m_sem_out_name << "/ns_contiki_sem_out_" << m_nodeId;
-	m_sem_timer_name << "/ns_contiki_sem_timer_";	// << m_nodeId;
+	m_sem_timer_name << "/ns_contiki_sem_timer_" << m_nodeId;
 	m_sem_time_name << "/ns_contiki_sem_time_";	// << m_nodeId;
 	m_sem_go_name << "/ns_contiki_sem_go_";
 	m_sem_done_name << "/ns_contiki_sem_done_";
@@ -432,8 +421,8 @@ void ContikiNetDevice::ClearIpc() {
 	sem_unlink(m_sem_out_name.str().c_str());
 	sem_unlink(m_sem_time_name.str().c_str());
 	sem_unlink(m_sem_timer_name.str().c_str());
-	sem_unlink("/ns_contiki_sem_go_");
-	sem_unlink("/ns_contiki_sem_done_");
+	sem_unlink(m_sem_go_name.str().c_str());
+	sem_unlink(m_sem_done_name.str().c_str());
 }
 
 void ContikiNetDevice::ReadCallback(unsigned char *buf, ssize_t len) {
