@@ -8,7 +8,7 @@
 
 #include "contiki-device.h"
 
-extern "C" void ContikiMain(char *nodeId, int mode);
+extern "C" void ContikiMain(char *nodeId, int mode,char *addr, char *app);
 
 NS_LOG_COMPONENT_DEFINE("ContikiNetDevice");
 
@@ -187,7 +187,6 @@ void ContikiNetDevice::StartContikiDevice(void) {
 
 		//Ordering contiki to continue, now that all preparations are ready.
 		printf("resuming child %d Node %d\n", child, m_nodeId);
-		//usleep(100);
 		if (kill(child, SIGCONT) == -1)
 			NS_FATAL_ERROR("kill(child, SIGCONT) failed " << strerror(errno));
 
@@ -210,7 +209,9 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		//char path[128] = "/home/kentux/mercurial/contiki-original/examples/ns3-ping6/example-ping6.ns3";
 
 		//execlp(path,path,c_nodeId, "0","", NULL);
-		ContikiMain(c_nodeId, 0);
+		char app[128] = "\0";
+		strcpy(app, m_application.c_str());
+		ContikiMain(c_nodeId, 0,NULL, app);
 
 	}
 
@@ -605,6 +606,11 @@ void ContikiNetDevice::SetMode(std::string mode) {
 	} else {
 		m_mode = (ContikiNetDevice::Mode) 0;
 	}
+}
+
+void ContikiNetDevice::SetApplication(std::string application) {
+
+	m_application = application;
 }
 
 ContikiNetDevice::Mode ContikiNetDevice::GetMode(void) {

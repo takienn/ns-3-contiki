@@ -30,8 +30,11 @@ main (int argc, char *argv[])
 	uint32_t nNodes = 1;
 	uint32_t sTime = 60; // default 6 seconds
 
+	std::string apps;
+
 	cmd.AddValue("nNodes", "Number of nodes", nNodes);
 	cmd.AddValue("sTime", "Simulation time", sTime);
+	cmd.AddValue("apps", "Comma separated list of contiki applications", apps);
 
 	cmd.Parse (argc,argv);
 	if(nNodes < 1)
@@ -46,7 +49,7 @@ main (int argc, char *argv[])
   /* Bridge nodes to Contiki processes */ 
 
   ContikiNetDeviceHelper contikiDeviceHelper;
-  contikiDeviceHelper.Install(nodes, "PHYOVERLAY");
+  contikiDeviceHelper.Install(nodes, "PHYOVERLAY", "hello-world.so");
 
 
   Simulator::Stop (Seconds (sTime));

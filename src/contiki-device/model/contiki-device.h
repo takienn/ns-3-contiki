@@ -86,15 +86,6 @@ public:
 	Ptr<NetDevice> GetBridgedNetDevice(void);
 
 	/**
-	 * \brief Set the executable path used with the fork/exec call.
-	 *
-	 * This method specifies the location on the host OS where the external application running
-	 * the alternate stack and application layer is located.
-	 *
-	 * \param path The executable path
-	 */
-
-	/**
 	 * \brief Set the MAC layer.
 	 *
 	 * This method tells the bridge which ns-3 MAC layer it should use to connect
@@ -188,6 +179,12 @@ public:
 	 * \param mode The operating mode of this device.
 	 */
 	void SetMode(std::string mode);
+
+	/**
+	 * Set the contiki application to be loaded
+	 * for this contiki node.
+	 */
+	void SetApplication(std::string application);
 
 	/**
 	 * Get the operating mode of this device.
@@ -527,6 +524,12 @@ private:
 	 * The operating mode of the bridge. Indicates overall network stack participation.
 	 */
 	Mode m_mode;
+
+	/**
+	 * \internal
+	 * The contiki application to run on this contiki node.
+	 */
+	std::string m_application;
 
 	/**
 	 * \internal
