@@ -79,7 +79,7 @@ public:
    * \param path The path used to locate the executable for the fork/exec call.
    * \param mode The stack operation mode (MACOVERLAY or PHYOVERLAY; medium emulation or layer 2 and medium emulation).
    */
-  void Install (NodeContainer nodes, std::string mode);
+  void Install (NodeContainer nodes, std::string mode, std::string apps);
 
 
 private:

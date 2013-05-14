@@ -67,10 +67,20 @@ ContikiNetDeviceHelper::Install (Ptr<Node> node, Ptr<NetDevice> nd)
 }
 
 void
-ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode)
+ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::string apps)
 {
   uint32_t nodeCount = nodes.GetN();
 
+  //Seperating contiki applications paths
+  std::vector<std::string> apps_list;
+  std::stringstream ss(apps);
+  std::string app;
+  while(std::getline(ss, app, ','))
+  {
+	  apps_list.push_back(app);
+  }
+
+  //Informing Contiki device about the number of nodes.
   ContikiNetDevice::SetNNodes(nodeCount);
 
   /* Create Pointers */
@@ -98,6 +108,12 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode)
   {
     bridge[i] =  m_deviceFactory.Create<ContikiNetDevice> ();
     bridge[i]->SetMode(mode);
+
+    if(i < apps_list.size())
+    	bridge[i]->SetApplication(apps_list[i]);
+    else
+    	bridge[i]->SetApplication(apps_list[0]); // XXX Needs better solution here
+
     /* Add Socket Bridge to Node (Spawns Contiki Process */
     nodes.Get(i)->AddDevice(bridge[i]);
     bridge[i]->SetBridgedNetDevice(bridge[i]); 
