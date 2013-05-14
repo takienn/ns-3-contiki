@@ -236,32 +236,32 @@ public:
 	 * \param oldValue Old time value
 	 * \param newValue New time value
 	 */
-	static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
+	 void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
 
 	/**
 	 * \internal
 	 * semaphore for time update operations
 	 */
-	static sem_t *m_sem_time;
+	 sem_t *m_sem_time;
 
 	/**
 	 * \internal
 	 * semaphore for timer scheduling operations
 	 */
-	static sem_t *m_sem_timer;
+	sem_t *m_sem_timer;
 
 	/**
 	 * \internal
 	 * Shared Memory Object for time
 	 */
-	static int m_shm_time;
+	int m_shm_time;
 
 	/**
 	 * \internal
 	 * The pointer to a shared memory address where to synchronize
 	 * current simulation time value.
 	 */
-	static unsigned char *m_traffic_time;
+	uint8_t *m_traffic_time;
 
 	static sem_t *m_sem_go;
 	static sem_t *m_sem_done;
@@ -316,7 +316,7 @@ private:
 	 *
 	 * Callback to process packets that are read
 	 */
-	void ReadCallback(unsigned char *buf, ssize_t len);
+	void ReadCallback(uint8_t *buf, ssize_t len);
 
 	/*
 	 * \internal
@@ -397,13 +397,13 @@ private:
 	 * \internal
 	 * The pointer to a shared memory address where to receive traffic from.
 	 */
-	unsigned char *m_traffic_in;
+	uint8_t *m_traffic_in;
 
 	/**
 	 * \internal
 	 * The pointer to a shared memory address where to send traffic to.
 	 */
-	unsigned char *m_traffic_out;
+	uint8_t *m_traffic_out;
 
 	/**
 	 * \internal
