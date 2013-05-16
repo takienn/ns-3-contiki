@@ -22,6 +22,7 @@
 #include "ns3/net-device-container.h"
 #include "ns3/object-factory.h"
 #include "ns3/contiki-device.h"
+#include "ns3/trace-helper.h"
 #include <string>
 
 namespace ns3 {
@@ -33,7 +34,7 @@ class AttributeValue;
  * \brief build ContikiPhy to allow ns-3 simulations to interact with Linux
  * tap devices and processes on the Linux host.
  */
-class ContikiPhyHelper
+class ContikiPhyHelper : public PcapHelperForDevice
 {
 public:
   /**
@@ -63,7 +64,9 @@ public:
   Ptr<ContikiPhy> Install (Ptr<ContikiNetDevice> bridge, Ptr<ContikiMac> mac, ContikiPhy::PhyMode mode);
 
 private:
+  virtual void EnablePcapInternal (std::string prefix, Ptr<NetDevice> nd, bool promiscuous, bool explicitFilename);
   ObjectFactory m_deviceFactory;
+  uint32_t m_pcapDlt;
 };
 
 } // namespace ns3

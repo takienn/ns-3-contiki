@@ -72,6 +72,25 @@ public:
   void SetChannel (Ptr<ContikiChannel> channel);
   Ptr<ContikiChannel> GetChannel (void) const;
 
+  /**
+     *
+     * Public method used to fire a MonitorSniffer trace for a wifi packet being transmitted.  Implemented for encapsulation
+     * purposes.
+     *
+     * @param packet the packet being transmitted
+     */
+
+  void NotifyMonitorSniffTx (Ptr<const Packet> packet);
+
+  /**
+     *
+     * Public method used to fire a MonitorSniffer trace for a wifi packet being received.  Implemented for encapsulation
+     * purposes.
+     *
+     * @param packet the packet being received
+     */
+
+  void NotifyMonitorSniffRx (Ptr<const Packet> packet);
 
 private:
   virtual void DoDispose (void);
@@ -91,6 +110,9 @@ private:
   RxOkCallback m_rxOkCallback;
   EventId m_endRxEvent;
   UniformVariable m_random;
+
+  TracedCallback<Ptr<const Packet> > m_phyMonitorSniffTxTrace;
+  TracedCallback<Ptr<const Packet> > m_phyMonitorSniffRxTrace;
 };
 
 } // namespace ns3

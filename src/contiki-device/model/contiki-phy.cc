@@ -32,6 +32,12 @@ ContikiPhy::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::ContikiPhy")
     .SetParent<Object> ()
     .AddConstructor<ContikiPhy> ()
+    .AddTraceSource ("MonitorSnifferRx",
+                         "Trace source simulating a contiki device in monitor mode sniffing all received frames",
+                         MakeTraceSourceAccessor (&ContikiPhy::m_phyMonitorSniffRxTrace))
+    .AddTraceSource ("MonitorSnifferTx",
+                         "Trace source simulating the capability of a contiki device in monitor mode to sniff all frames being transmitted",
+                         MakeTraceSourceAccessor (&ContikiPhy::m_phyMonitorSniffTxTrace))
   ;
   return tid;
 }
@@ -170,6 +176,7 @@ ContikiPhy::EndReceive (Ptr<Packet> packet)
   if (1)
     {
       /* Pass packet up the stack to the MAC Layer */
+	  NotifyMonitorSniffRx (packet);
       m_rxOkCallback(packet);
     }
   else
@@ -196,6 +203,7 @@ ContikiPhy::SendPacket (Ptr<const Packet> packet)
 {
   Ptr<ContikiPhy> ptr = this;
   NS_LOG_FUNCTION (this << packet);
+  NotifyMonitorSniffTx(packet);
   m_channel->Send (ptr, packet, 65);
 }
 
@@ -267,6 +275,16 @@ ContikiPhy::SetMode (PhyMode mode)
       // IEEE Std 802.15.4-2006 section 6.5.3.3
       SetEdThreshold(-85);
   }
+}
+
+void ContikiPhy::NotifyMonitorSniffTx (Ptr<const Packet> packet)
+{
+  m_phyMonitorSniffTxTrace (packet);
+}
+
+void ContikiPhy::NotifyMonitorSniffRx (Ptr<const Packet> packet)
+{
+  m_phyMonitorSniffRxTrace (packet);
 }
 
 double

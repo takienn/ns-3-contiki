@@ -548,7 +548,7 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	NS_LOG_DEBUG ("Packet UID is " << packet->GetUid ());
 	/* Forward packet to socket */
 	Ptr<Packet> p = packet->Copy();
-	NS_LOG_LOGIC ("Writing packet to socket");
+	NS_LOG_LOGIC ("Writing packet to shared memory");
 	p->CopyData(m_packetBuffer, p->GetSize());
 
 	if (sem_wait(m_sem_out) == -1)

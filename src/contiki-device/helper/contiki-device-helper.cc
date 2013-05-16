@@ -73,7 +73,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
 
   //Seperating contiki applications paths
   std::vector<std::string> apps_list;
-  std::stringstream ss(apps);
+  std::istringstream ss(apps);
   std::string app;
   while(std::getline(ss, app, ','))
   {
@@ -89,12 +89,12 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
   Ptr<ContikiPhy> phy [nodeCount + 1];
 
   /* Create Helpers */
-  ContikiMacHelper ContikiMacHelper;
-  ContikiPhyHelper ContikiPhyHelper;
-  ContikiChannelHelper ContikiChannelHelper;
+  ContikiMacHelper contikiMacHelper;
+  ContikiPhyHelper contikiPhyHelper;
+  ContikiChannelHelper contikiChannelHelper;
 
   /* Create Channel */
-  Ptr<ContikiChannel> channel = ContikiChannelHelper.Create();
+  Ptr<ContikiChannel> channel = contikiChannelHelper.Create();
   channel->SetPropagationDelayModel (CreateObject<ConstantSpeedPropagationDelayModel> ());
   Ptr<LogDistancePropagationLossModel> log = CreateObject<LogDistancePropagationLossModel> ();
   channel->SetPropagationLossModel (log);
@@ -118,12 +118,14 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
     nodes.Get(i)->AddDevice(bridge[i]);
     bridge[i]->SetBridgedNetDevice(bridge[i]); 
     /* Add MAC layer to ContikiNetDevice */
-    mac[i] = ContikiMacHelper.Install(bridge[i]);
+    mac[i] = contikiMacHelper.Install(bridge[i]);
     /* Add PHY to ContikiNetDevice and ContikiMac */
-    phy[i] = ContikiPhyHelper.Install(bridge[i], mac[i], ContikiPhy::DSSS_O_QPSK_GHz);
+    phy[i] = contikiPhyHelper.Install(bridge[i], mac[i], ContikiPhy::DSSS_O_QPSK_GHz);
+
+    contikiPhyHelper.EnablePcapAll(std::string("contiki-device-example"), true);
 
     /* Add Physical Components (Channel and Position) */
-    ContikiChannelHelper.Install(channel, bridge[i]);
+    contikiChannelHelper.Install(channel, bridge[i]);
     phy[i]->SetMobility(pos);
   }
 }
