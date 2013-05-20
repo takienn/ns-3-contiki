@@ -54,7 +54,7 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 	}
 
 	if (input_size > 0)
-		NS_LOG_UNCOND("read data of length " << input_size);
+		NS_LOG_LOGIC("read data of length " << input_size);
 	return IpcReader::Data(buf, input_size);
 }
 
@@ -165,7 +165,7 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		NS_ABORT_MSG(
 				"ContikiNetDevice::CreateIpc(): Unix fork error, errno = " << strerror (errno));
 	else if (child) { /*  This is the parent. */
-		NS_LOG_DEBUG ("Parent process");NS_LOG_UNCOND("Child PID: " << child);
+		NS_LOG_DEBUG ("Parent process");NS_LOG_LOGIC("Child PID: " << child);
 
 		//
 		// Spin up the Contiki Device and start receiving packets.
@@ -235,14 +235,14 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 
 
 	////// Waiting for contiki to live the moment /////////
-	NS_LOG_UNCOND("ns-3 waiting for contiki at " << Simulator::Now());
+	NS_LOG_LOGIC("ns-3 waiting for contiki at " << Simulator::Now());
 	fflush(stdout);
 	if(sem_getvalue(m_sem_done, &rtval) == -1)
 		perror("sem_getvalue(m_sem_done) error");
 	while ((uint32_t) (rtval) < N) {
 		sem_getvalue(m_sem_done, &rtval);
 	}
-	NS_LOG_UNCOND("ns-3 got contiki");
+	NS_LOG_LOGIC("ns-3 got contiki");
 	fflush(stdout);
 	///////////////////////////////////////////////////////
 
@@ -298,7 +298,7 @@ void ContikiNetDevice::StopContikiDevice(void) {
 		m_traffic_time = NULL;
 	}
 
-	NS_LOG_UNCOND("Killing Child");
+	NS_LOG_LOGIC("Killing Child");
 	kill(child, SIGTERM);
 
 	ClearIpc();
