@@ -73,7 +73,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
 
   //Seperating contiki applications paths
   std::vector<std::string> apps_list;
-  std::istringstream ss(apps);
+  std::stringstream ss(apps);
   std::string app;
   while(std::getline(ss, app, ','))
   {
@@ -121,8 +121,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
     mac[i] = contikiMacHelper.Install(bridge[i]);
     /* Add PHY to ContikiNetDevice and ContikiMac */
     phy[i] = contikiPhyHelper.Install(bridge[i], mac[i], ContikiPhy::DSSS_O_QPSK_GHz);
-
-    contikiPhyHelper.EnablePcapAll(std::string("contiki-device-example"), true);
+    contikiPhyHelper.EnablePcapAll("contiki-device", true);
 
     /* Add Physical Components (Channel and Position) */
     contikiChannelHelper.Install(channel, bridge[i]);

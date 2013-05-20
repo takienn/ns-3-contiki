@@ -236,7 +236,7 @@ void IpcReader::SetTimer(uint64_t time, int type) {
 	{
 	Simulator::ScheduleWithContext(m_nodeId,MilliSeconds(time), &IpcReader::SendAlarm, this);
 	}
-	NS_LOG_UNCOND("SetTimer " << time << " of type " << type << "\n");
+	NS_LOG_LOGIC("SetTimer " << time << " of type " << type << "\n");
 }
 
 void IpcReader::SendAlarm(void) {
