@@ -24,7 +24,6 @@
 #include "ns3/uinteger.h"
 
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <sys/un.h>
 #include <semaphore.h>
 #include <errno.h>
@@ -70,9 +69,6 @@ public:
 
 	ContikiNetDevice();
 	virtual ~ContikiNetDevice();
-
-	static uint32_t GetNNodes(void);
-	static void SetNNodes(uint32_t);
 
 	uint32_t GetNodeId();
 
@@ -225,54 +221,6 @@ public:
 	virtual bool SupportsSendFrom() const;
 	virtual Address GetMulticast(Ipv6Address addr) const;
 
-	/**
-	 * \internal
-	 *
-	 * This a sink where changes in simulation time are received from CurrentTs trace source
-	 * and written to the corresponding shared memory segment to synchronize contiki's clock.
-	 * \param oldValue Old time value
-	 * \param newValue New time value
-	 */
-	 void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
-
-	/**
-	 * \internal
-	 * semaphore for time update operations
-	 */
-	 sem_t *m_sem_time;
-
-	/**
-	 * \internal
-	 * semaphore for timer scheduling operations
-	 */
-	sem_t *m_sem_timer;
-
-	sem_t *m_sem_timer_go;
-	sem_t *m_sem_timer_done;
-
-	/**
-	 * \internal
-	 * Shared Memory Object for time
-	 */
-	int m_shm_time;
-
-	/**
-	 * \internal
-	 * The pointer to a shared memory address where to synchronize
-	 * current simulation time value.
-	 */
-	uint8_t *m_traffic_time;
-
-	static sem_t *m_sem_go;
-	static sem_t *m_sem_done;
-
-	/**
-	 * \internal
-	 *
-	 * Number of ContikiDevice Nodes
-	 */
-	static uint32_t m_nNodes;
-
 protected:
 	virtual void DoDispose(void);
 
@@ -280,22 +228,6 @@ protected:
 			Ptr<const Packet> packet, uint16_t protocol, Address const &src);
 
 private:
-
-	/**
-	 * \internal
-	 *
-	 * Create shared memory segments and spawn a new process passing NodeId as parameter to it for IPC.
-	 * If this method returns, Contiki Process should be able to open and map the same memory segments
-	 * so that an IPC can be done.
-	 */
-	void CreateIpc(void);
-
-	/**
-	 * \internal
-	 * Clear the file descriptors for the shared memory segments
-	 * and unmap the corresponding addresses and unlinking the semaphores
-	 */
-	void ClearIpc(void);
 
 	/**
 	 * \internal
@@ -395,112 +327,6 @@ private:
 
 	/**
 	 * \internal
-	 * The pointer to a shared memory address where to receive traffic from.
-	 */
-	uint8_t *m_traffic_in;
-
-	/**
-	 * \internal
-	 * The pointer to a shared memory address where to send traffic to.
-	 */
-	uint8_t *m_traffic_out;
-
-	/**
-	 * \internal
-	 * Shared Memory Object for input traffic
-	 */
-	int m_shm_in;
-
-	/**
-	 * \internal
-	 * Shared Memory Object for output traffic
-	 */
-	int m_shm_out;
-
-	/**
-	 * \internal
-	 * Shared Memory Onject for timers
-	 */
-	int m_shm_timer;
-
-	/**
-	 * \internal
-	 * Name of input shared memory segment
-	 */
-	std::stringstream m_shm_in_name;
-
-	/**
-	 * \internal
-	 * Name of output shared memory segment
-	 */
-	std::stringstream m_shm_out_name;
-
-	/**
-	 * \internal
-	 * Name of time shared memory segment
-	 */
-	std::stringstream m_shm_time_name;
-
-	/**
-	 * \internal
-	 * Name of timer shared memory segment
-	 */
-	std::stringstream m_shm_timer_name;
-
-	/**
-	 * \internal
-	 * Semaphore for writing operations
-	 */
-	sem_t *m_sem_out;
-
-	/**
-	 * \internal
-	 * Semaphore for reading operations
-	 */
-	sem_t *m_sem_in;
-
-	std::stringstream m_sem_go_name;
-	std::stringstream m_sem_done_name;
-	/**
-	 * \internal
-	 * Name of input semaphore
-	 */
-	std::stringstream m_sem_in_name;
-
-	/**
-	 * \internal
-	 * Name of output semaphore
-	 */
-	std::stringstream m_sem_out_name;
-
-	/**
-	 * \internal
-	 * Name of time semaphore
-	 */
-	std::stringstream m_sem_time_name;
-
-	/**
-	 * \internal
-	 * Name of timer semaphore
-	 */
-	std::stringstream m_sem_timer_name;
-	std::stringstream m_sem_timer_go_name;
-	std::stringstream m_sem_timer_done_name;
-
-	/*
-	 * \internal
-	 * Size of traffic buffer
-	 */
-	size_t m_traffic_size;
-
-	/*
-	 * \internal
-	 * Size of time buffer
-	 */
-	size_t m_time_size;
-
-	/**
-	 * \internal
 	 *
 	 * The ID of the ns-3 event used to schedule the start up of the underlying
 	 * host Socket device and ns-3 read thread.
@@ -565,7 +391,7 @@ private:
 	 *
 	 * The IP address to use as the device IP on the host.
 	 */
-	Ipv6Address m_socketIp;
+	Ipv6Address m_nodeIp;
 
 	/**
 	 * \internal
@@ -574,7 +400,7 @@ private:
 	 * This value comes from the MAC address assigned to the bridged ns-3
 	 * net device.
 	 */
-	Mac64Address m_socketMac;
+	Mac64Address m_nodeMac;
 
 	/**
 	 * \internal
@@ -617,6 +443,60 @@ private:
 	 * to the overlying container address.
 	 */
 	bool m_ns3AddressRewritten;
+
+	/**
+	 * \internal
+	 * The pointer to a shared memory address where to receive traffic from.
+	 */
+	uint8_t *m_traffic_in;
+
+	/**
+	 * \internal
+	 * The pointer to a shared memory address where to send traffic to.
+	 */
+	uint8_t *m_traffic_out;
+
+	/**
+	 * \internal
+	 * Shared Memory Object for input traffic
+	 */
+	int m_shm_in;
+
+	/**
+	 * \internal
+	 * Shared Memory Object for output traffic
+	 */
+	int m_shm_out;
+
+	/**
+	 * \internal
+	 * Shared Memory Onject for timers
+	 */
+	int m_shm_timer;
+
+	/**
+	 * \internal
+	 * Semaphore for writing operations
+	 */
+	sem_t *m_sem_out;
+
+	/**
+	 * \internal
+	 * Semaphore for reading operations
+	 */
+	sem_t *m_sem_in;
+
+	/*
+	 * \internal
+	 * Size of traffic buffer
+	 */
+	size_t m_traffic_size;
+
+	/*
+	 * \internal
+	 * Size of time buffer
+	 */
+	size_t m_time_size;
 
 };
 
