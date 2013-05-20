@@ -30,7 +30,7 @@ main (int argc, char *argv[])
 	uint32_t nNodes = 1;
 	uint32_t sTime = 60; // default 6 seconds
 
-	std::string apps;
+	std::string apps = "udp-client.so,udp-server.so";
 
 	cmd.AddValue("nNodes", "Number of nodes", nNodes);
 	cmd.AddValue("sTime", "Simulation time", sTime);
@@ -49,7 +49,7 @@ main (int argc, char *argv[])
   /* Bridge nodes to Contiki processes */ 
 
   ContikiNetDeviceHelper contikiDeviceHelper;
-  contikiDeviceHelper.Install(nodes, "PHYOVERLAY", "hello-world.so");
+  contikiDeviceHelper.Install(nodes, "PHYOVERLAY", apps);
 
 
   Simulator::Stop (Seconds (sTime));
