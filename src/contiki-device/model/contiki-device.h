@@ -247,6 +247,9 @@ public:
 	 */
 	sem_t *m_sem_timer;
 
+	sem_t *m_sem_timer_go;
+	sem_t *m_sem_timer_done;
+
 	/**
 	 * \internal
 	 * Shared Memory Object for time
@@ -481,6 +484,8 @@ private:
 	 * Name of timer semaphore
 	 */
 	std::stringstream m_sem_timer_name;
+	std::stringstream m_sem_timer_go_name;
+	std::stringstream m_sem_timer_done_name;
 
 	/*
 	 * \internal
