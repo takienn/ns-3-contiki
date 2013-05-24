@@ -103,6 +103,13 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
   Ptr<MobilityModel> pos = CreateObject<ConstantPositionMobilityModel> ();
   pos->SetPosition (Vector (0.0, 0.0, 0.0));
 
+
+  //
+  // Registering our Clock trace sink to handle clock synchronization
+  //
+  Simulator::GetImplementation()->TraceConnectWithoutContext("CurrentTs",
+		  MakeCallback(&ContikiNetDevice::ContikiClockHandle));
+
   /* Build Network Stack for all Nodes */
   for (uint8_t i = 0; i < nodeCount; i++)
   {

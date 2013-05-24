@@ -29,25 +29,33 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 	int rtval;
 	sem_getvalue(m_sem_traffic_done, &rtval);
 	if (rtval == 1) {
+
+		NS_LOG_LOGIC("contiki wrote something " << m_nodeId);
+
 		if (sem_wait(m_sem_in) == -1)
 			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
+		NS_LOG_LOGIC("ns3 reading " << m_nodeId);
 		// First read input size
 		memcpy(&input_size, m_traffic_in, sizeof(size_t));
 
 		// Now read input
 		memcpy(buf, m_traffic_in + sizeof(size_t), input_size);
-		memset(m_traffic_in, 0, bufferSize);
+		memset(m_traffic_in, 0, bufferSize + sizeof(size_t));
+
+		NS_LOG_LOGIC("ns3 read " << m_nodeId);
+
+		NS_LOG_LOGIC("ns3 releasing contiki after read " << m_nodeId);
+		sem_wait(m_sem_traffic_done);
+		sem_post(m_sem_traffic_go);
+		NS_LOG_LOGIC("ns3 released contiki after read " << m_nodeId);
 
 		if (sem_post(m_sem_in) == -1)
 			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
-
-		sem_wait(m_sem_traffic_done);
-		sem_post(m_sem_traffic_go);
 	}
 
 	if (input_size == 0) {
-		NS_LOG_INFO ("ContikiNetDeviceFdReader::DoRead(): done");
+		//NS_LOG_LOGIC ("ContikiNetDeviceFdReader::DoRead(): done" << m_nodeId);
 		free(buf);
 		buf = 0;
 		//len = 0;
@@ -75,12 +83,12 @@ TypeId ContikiNetDevice::GetTypeId(void) {
 	return tid;
 }
 //
-//sem_t* ContikiNetDevice::m_sem_time = NULL;
+sem_t* ContikiNetDevice::m_sem_time = NULL;
 ////sem_t* ContikiNetDevice::m_sem_timer = NULL;
 sem_t* ContikiNetDevice::m_sem_go = NULL;
 sem_t* ContikiNetDevice::m_sem_done = NULL;
-//int ContikiNetDevice::m_shm_time = 0;
-//uint8_t *ContikiNetDevice::m_traffic_time = 0;
+int ContikiNetDevice::m_shm_time = 0;
+uint8_t *ContikiNetDevice::m_traffic_time = 0;
 uint32_t ContikiNetDevice::m_nNodes = 0;
 
 ContikiNetDevice::ContikiNetDevice() :
@@ -122,12 +130,6 @@ void ContikiNetDevice::Start(Time tStart) {
 	NS_LOG_FUNCTION (tStart);
 
 	//
-	// Registering our Clock trace sink to handle clock synchronization
-	//
-	Simulator::GetImplementation()->TraceConnectWithoutContext("CurrentTs",
-			MakeCallback(&ContikiNetDevice::ContikiClockHandle, this));
-
-	//
 	//
 	// Cancel any pending start event and schedule a new one at some relative time in the future.
 	//
@@ -157,13 +159,25 @@ void ContikiNetDevice::StartContikiDevice(void) {
 
 	m_nodeId = GetNode()->GetId();
 
-	//int status;
-
 	// Launching contiki process and wait
 
 	NS_LOG_LOGIC ("Creating IPC Shared Memory");
 
 	CreateIpc();
+
+	//
+	// Spin up the Contiki Device and start receiving packets.
+	//
+	//
+	// Now spin up a read thread to read packets from the tap device.
+	//
+	NS_ABORT_MSG_IF(m_ipcReader != 0,
+			"ContikiNetDevice::StartContikiDevice(): Receive thread is already running");
+	NS_LOG_LOGIC ("Spinning up read thread");
+
+	m_ipcReader = Create<ContikiIpcReader>();
+	m_ipcReader->Start(MakeCallback(&ContikiNetDevice::ReadCallback, this),
+			m_nodeId, child);
 
 	if ((child = fork()) == -1)
 		NS_ABORT_MSG(
@@ -171,23 +185,15 @@ void ContikiNetDevice::StartContikiDevice(void) {
 	else if (child) { /*  This is the parent. */
 		NS_LOG_DEBUG ("Parent process");NS_LOG_LOGIC("Child PID: " << child);
 
-		//
-		// Spin up the Contiki Device and start receiving packets.
-		//
-		//
-		// Now spin up a read thread to read packets from the tap device.
-		//
-		NS_ABORT_MSG_IF(m_ipcReader != 0,
-				"ContikiNetDevice::StartContikiDevice(): Receive thread is already running"); NS_LOG_LOGIC ("Spinning up read thread");
 
-		m_ipcReader = Create<ContikiIpcReader>();
-		m_ipcReader->Start(MakeCallback(&ContikiNetDevice::ReadCallback, this),
-				m_nodeId, child);
 
-//		//Ordering contiki to continue, now that all preparations are ready.
-//		printf("resuming child %d Node %d\n", child, m_nodeId);
-//		if (kill(child, SIGCONT) == -1)
-//			NS_FATAL_ERROR("kill(child, SIGCONT) failed " << strerror(errno));
+
+		//Ordering contiki to continue, now that all preparations are ready.
+//
+//		int status;
+//		waitpid(child, &status, WUNTRACED);
+//		if(WIFSTOPPED(status))
+//			kill(child, SIGCONT);
 
 	} else {
 
@@ -196,7 +202,7 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		//to prepare some stuff.
 		//printf("Stopping child %d\n", getpid());
 //		if (kill(getpid(), SIGSTOP) == -1)
-//			perror("kill(sigstop) failed ");
+//			perror("kill(sigstop) failed ");764 nodeId 1
 
 		//Running Contiki
 
@@ -204,12 +210,15 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		ss << m_nodeId;
 		char c_nodeId[128];
 		strcpy(c_nodeId, ss.str().c_str());
-
-		//char path[128] = "/home/kentux/mercurial/contiki-original/examples/ns3-ping6/example-ping6.ns3";
-
-		//execlp(path,path,c_nodeId, "0","", NULL);
 		char app[128] = "\0";
 		strcpy(app, m_application.c_str());
+
+		//char path[128] = "/home/kentux/mercurial/contiki-original/examples/dummy/dummy.ns3";
+
+		//execlp(path,path,c_nodeId, "0","NULL", app, NULL);
+		NS_LOG_LOGIC("ContikiMain pid " << getpid() << " nodeId " << c_nodeId << " m_nodeId " << m_nodeId);
+		fflush(stdout);
+
 		ContikiMain(c_nodeId, 0, NULL, app);
 
 	}
@@ -223,6 +232,8 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	uint32_t N = GetNNodes(); // Number of nodes
 
 	/////// Writing new time //////////////
+
+	NS_LOG_LOGIC("Handling new time step " << newValue);
 	if (sem_wait(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
@@ -233,21 +244,30 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	///////////////////////////////////////
 
 	////// Waiting for contiki to live the moment /////////
-	NS_LOG_LOGIC("ns-3 waiting for contiki at " << Simulator::Now());
+	NS_LOG_LOGIC("ns-3 waiting for contikis at " << Simulator::Now() << std::endl);
 	fflush(stdout);
 	if (sem_getvalue(m_sem_done, &rtval) == -1)
 		perror("sem_getvalue(m_sem_done) error");
 	while ((uint32_t) (rtval) < N) {
+		//NS_LOG_LOGIC("contikis not ready yet: " << rtval);
 		sem_getvalue(m_sem_done, &rtval);
-	} NS_LOG_LOGIC("ns-3 got contiki");
+	}
+	NS_LOG_LOGIC("ns-3 got contikis");
 	fflush(stdout);
 	///////////////////////////////////////////////////////
 
 	///// Resetting the semaphores ///////
 	for (uint32_t i = 0; i < N; i++) {
 		sem_wait(m_sem_done);
-		sem_post(m_sem_go);
 	}
+
+	// Releasing Contiki Nodes
+	NS_LOG_LOGIC("Releasing All Contiki Processes\n");
+	for(uint32_t i = 0; i< N; i++){
+		sem_post(m_sem_go);
+		NS_LOG_LOGIC("Releasing Contiki Processe " << i << "\n");
+	}
+	NS_LOG_LOGIC("Released All Contiki Processes\n");
 	//////////////////////////////////////
 
 	//XXX This trick is to force ns-3 to go in slow motion so that
@@ -296,7 +316,9 @@ void ContikiNetDevice::StopContikiDevice(void) {
 	}
 
 	NS_LOG_LOGIC("Killing Child");
-	kill(child, SIGTERM);
+	kill(child, SIGKILL);
+
+	usleep(100000);
 
 	ClearIpc();
 }
@@ -319,12 +341,12 @@ void ContikiNetDevice::CreateIpc(void) {
 	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
 	m_shm_out_name << "/ns_contiki_traffic_out_" << m_nodeId;
 	m_shm_timer_name << "/ns_contiki_traffic_timer_" << m_nodeId;
-	m_shm_time_name << "/ns_contiki_traffic_time_" << m_nodeId;
+	m_shm_time_name << "/ns_contiki_traffic_time_";// << m_nodeId;
 
 	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
 	m_sem_out_name << "/ns_contiki_sem_out_" << m_nodeId;
 	m_sem_timer_name << "/ns_contiki_sem_timer_" << m_nodeId;
-	m_sem_time_name << "/ns_contiki_sem_time_" << m_nodeId;
+	m_sem_time_name << "/ns_contiki_sem_time_";// << m_nodeId;
 	m_sem_go_name << "/ns_contiki_sem_go_";	// << m_nodeId;;
 	m_sem_done_name << "/ns_contiki_sem_done_";	// << m_nodeId;;
 	m_sem_timer_go_name << "/ns_contiki_sem_timer_go_" << m_nodeId;
@@ -373,15 +395,15 @@ void ContikiNetDevice::CreateIpc(void) {
 			sizeof(size_t) + m_traffic_size + sizeof(size_t),
 			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_out, 0);
 
-	//if (m_traffic_time == NULL)
-	m_traffic_time = (uint8_t *) mmap(NULL, m_time_size, PROT_READ | PROT_WRITE,
-			MAP_SHARED, m_shm_time, 0);
+	if (m_traffic_time == NULL)
+		m_traffic_time = (uint8_t *) mmap(NULL, m_time_size, PROT_READ | PROT_WRITE,
+				MAP_SHARED, m_shm_time, 0);
 
-	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), O_CREAT,
+	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), O_CREAT | O_EXCL,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
 		NS_FATAL_ERROR(" ns -3 sem_open(sem_in) failed: " << strerror(errno));
 
-	if ((m_sem_out = sem_open(m_sem_out_name.str().c_str(), O_CREAT,
+	if ((m_sem_out = sem_open(m_sem_out_name.str().c_str(), O_CREAT | O_EXCL,
 			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
 		NS_FATAL_ERROR("ns -3 sem_open(sem_out) failed: " << strerror(errno));
 
@@ -432,6 +454,8 @@ void ContikiNetDevice::ClearIpc() {
 	sem_unlink(m_sem_timer_name.str().c_str());
 	sem_unlink(m_sem_go_name.str().c_str());
 	sem_unlink(m_sem_done_name.str().c_str());
+
+	NS_LOG_LOGIC("Cleared semaphores and Shared memories\n");
 }
 
 void ContikiNetDevice::ReadCallback(uint8_t *buf, ssize_t len) {
@@ -557,10 +581,24 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	NS_LOG_LOGIC ("Writing packet to shared memory");
 	p->CopyData(m_packetBuffer, p->GetSize());
 
+	NS_LOG_UNCOND("NS-3 is writing for node " << child << " on sem " << m_sem_out_name.str().c_str() << "\n");
+
+	int tmp = 0;
+
+	while(tmp == 0)
+	{
+		sem_getvalue(m_sem_out, &tmp);
+		NS_LOG_UNCOND("value of m_sem_out in node " << m_nodeId << " is " << tmp << "\n");
+		//sleep(1);
+	}
+
+
 	if (sem_wait(m_sem_out) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 	//XXX Maybe check if p->GetSize() doesn't exceed m_traffic_size
+
+	NS_LOG_UNCOND("NS-3 got sem_out for node " << child << "\n");
 
 	size_t output_size = (size_t) p->GetSize();
 	//writing traffic size first
@@ -573,8 +611,11 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	if (sem_post(m_sem_out) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
+	NS_LOG_UNCOND("NS-3 wrote for node " << child << "\n");
+
 	NS_ABORT_MSG_IF(retval == (void * ) -1,
-			"ContikiNetDevice::ReceiveFromBridgedDevice(): memcpy() (AKA Write) error.");NS_LOG_LOGIC ("End of receive packet handling on node " << m_node->GetId ());
+			"ContikiNetDevice::ReceiveFromBridgedDevice(): memcpy() (AKA Write) error.");
+	NS_LOG_LOGIC ("End of receive packet handling on node " << m_node->GetId ());
 	return true;
 }
 
