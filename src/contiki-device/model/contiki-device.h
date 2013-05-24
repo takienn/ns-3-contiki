@@ -169,7 +169,7 @@ public:
 	 *
 	 * @param tStop the stop time
 	 *
-	 * \see SocketBridge::Start
+	 * \see ContikiNetDevice::Start
 	 */
 	void Stop(Time tStop);
 
@@ -233,13 +233,13 @@ public:
 	 * \param oldValue Old time value
 	 * \param newValue New time value
 	 */
-	 void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
+	 static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
 
 	/**
 	 * \internal
 	 * semaphore for time update operations
 	 */
-	 sem_t *m_sem_time;
+	 static sem_t *m_sem_time;
 
 	/**
 	 * \internal
@@ -254,14 +254,14 @@ public:
 	 * \internal
 	 * Shared Memory Object for time
 	 */
-	int m_shm_time;
+	static int m_shm_time;
 
 	/**
 	 * \internal
 	 * The pointer to a shared memory address where to synchronize
 	 * current simulation time value.
 	 */
-	uint8_t *m_traffic_time;
+	static uint8_t *m_traffic_time;
 
 	static sem_t *m_sem_go;
 	static sem_t *m_sem_done;
@@ -353,7 +353,7 @@ private:
 	/**
 	 * \internal
 	 *
-	 * Callback used to hook the standard packet receive callback of the SocketBridge
+	 * Callback used to hook the standard packet receive callback of the ContikiNetDevice
 	 * ns-3 net device.  This is never called, and therefore no packets will ever
 	 * be received forwarded up the IP stack on the ghost node through this device.
 	 */
@@ -362,7 +362,7 @@ private:
 	/**
 	 * \internal
 	 *
-	 * Callback used to hook the promiscuous packet receive callback of the SocketBridge
+	 * Callback used to hook the promiscuous packet receive callback of the ContikiNetDevice
 	 * ns-3 net device.  This is never called, and therefore no packets will ever
 	 * be received forwarded up the IP stack on the ghost node through this device.
 	 *
@@ -382,7 +382,7 @@ private:
 	/**
 	 * \internal
 	 *
-	 * The ns-3 interface index of this SocketBridge net device.
+	 * The ns-3 interface index of this ContikiNetDevice net device.
 	 */
 	uint32_t m_ifIndex;
 
@@ -539,9 +539,9 @@ private:
 	/**
 	 * \internal
 	 *
-	 * The (unused) MAC address of the SocketBridge net device.  Since the SocketBridge
+	 * The (unused) MAC address of the ContikiNetDevice net device.  Since the ContikiNetDevice
 	 * is implemented as a ns-3 net device, it is required to implement certain
-	 * functionality.  In this case, the SocketBridge is automatically assigned a
+	 * functionality.  In this case, the ContikiNetDevice is automatically assigned a
 	 * MAC address, but it is not used.
 	 */
 	Mac64Address m_address;
@@ -565,7 +565,7 @@ private:
 	 *
 	 * The IP address to use as the device IP on the host.
 	 */
-	Ipv6Address m_socketIp;
+	Ipv6Address m_addrIp;
 
 	/**
 	 * \internal
@@ -598,7 +598,7 @@ private:
 	Ptr<ContikiPhy> m_phy;
 
 	/**
-	 * The PID of the child/Contiki process attached via the SocketBridge.
+	 * The PID of the child/Contiki process attached via the ContikiNetDevice.
 	 */
 	pid_t child;
 
