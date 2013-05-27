@@ -8,7 +8,7 @@
 
 #include "contiki-device.h"
 
-extern "C" void ContikiMain(char *nodeId, int mode, char *addr, char *app);
+extern "C" void ContikiMain(char *nodeId, int mode, const char *addr, char *app);
 
 NS_LOG_COMPONENT_DEFINE("ContikiNetDevice");
 
@@ -206,6 +206,15 @@ void ContikiNetDevice::StartContikiDevice(void) {
 
 		//Running Contiki
 
+		Ptr<NetDevice> nd = GetBridgedNetDevice();
+		Ptr<Node> n = nd->GetNode();
+
+		/* Generate MAC address, assign to Node */
+		Mac64Address mac64Address = Mac64Address::Allocate();
+
+		Address ndAddress = Address(mac64Address);
+		nd->SetAddress(ndAddress);
+
 		std::stringstream ss;
 		ss << m_nodeId;
 		char c_nodeId[128];
@@ -219,7 +228,9 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		NS_LOG_LOGIC("ContikiMain pid " << getpid() << " nodeId " << c_nodeId << " m_nodeId " << m_nodeId);
 		fflush(stdout);
 
-		ContikiMain(c_nodeId, 0, NULL, app);
+		std::ostringstream nodeAddr;
+		nodeAddr << mac64Address;
+		ContikiMain(c_nodeId, 0, nodeAddr.str().c_str(), app);
 
 	}
 
@@ -325,15 +336,6 @@ void ContikiNetDevice::StopContikiDevice(void) {
 
 void ContikiNetDevice::CreateIpc(void) {
 	NS_LOG_FUNCTION_NOARGS ();
-
-	Ptr<NetDevice> nd = GetBridgedNetDevice();
-	Ptr<Node> n = nd->GetNode();
-
-	/* Generate MAC address, assign to Node */
-	Mac64Address mac64Address = Mac64Address::Allocate();
-
-	Address ndAddress = Address(mac64Address);
-	nd->SetAddress(ndAddress);
 
 	/* Shared Memory*/
 
@@ -581,14 +583,14 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	NS_LOG_LOGIC ("Writing packet to shared memory");
 	p->CopyData(m_packetBuffer, p->GetSize());
 
-	NS_LOG_UNCOND("NS-3 is writing for node " << child << " on sem " << m_sem_out_name.str().c_str() << "\n");
+	NS_LOG_LOGIC("NS-3 is writing for node " << child << " on sem " << m_sem_out_name.str().c_str() << "\n");
 
 	int tmp = 0;
 
 	while(tmp == 0)
 	{
 		sem_getvalue(m_sem_out, &tmp);
-		NS_LOG_UNCOND("value of m_sem_out in node " << m_nodeId << " is " << tmp << "\n");
+		NS_LOG_LOGIC("value of m_sem_out in node " << m_nodeId << " is " << tmp << "\n");
 		//sleep(1);
 	}
 
@@ -598,7 +600,7 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 
 	//XXX Maybe check if p->GetSize() doesn't exceed m_traffic_size
 
-	NS_LOG_UNCOND("NS-3 got sem_out for node " << child << "\n");
+	NS_LOG_LOGIC("NS-3 got sem_out for node " << child << "\n");
 
 	size_t output_size = (size_t) p->GetSize();
 	//writing traffic size first
@@ -611,7 +613,7 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	if (sem_post(m_sem_out) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
-	NS_LOG_UNCOND("NS-3 wrote for node " << child << "\n");
+	NS_LOG_LOGIC("NS-3 wrote for node " << child << "\n");
 
 	NS_ABORT_MSG_IF(retval == (void * ) -1,
 			"ContikiNetDevice::ReceiveFromBridgedDevice(): memcpy() (AKA Write) error.");
