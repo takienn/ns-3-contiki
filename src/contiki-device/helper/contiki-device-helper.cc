@@ -115,6 +115,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
   {
     bridge[i] =  m_deviceFactory.Create<ContikiNetDevice> ();
     bridge[i]->SetMode(mode);
+    bridge[i]->Start(NanoSeconds(bridge[i]->GetNodeId()));
 
     if(i < apps_list.size())
     	bridge[i]->SetApplication(apps_list[i]);
