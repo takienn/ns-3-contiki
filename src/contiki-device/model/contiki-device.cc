@@ -210,7 +210,23 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		Ptr<Node> n = nd->GetNode();
 
 		/* Generate MAC address, assign to Node */
-		Mac64Address mac64Address = Mac64Address::Allocate();
+		uint8_t address[8];
+
+		uint64_t id = (uint64_t)m_nodeId + 1;
+
+		address[0] = (id >> 56) & 0xff;
+		address[1] = (id >> 48) & 0xff;
+		address[2] = (id >> 40) & 0xff;
+		address[3] = (id >> 32) & 0xff;
+		address[4] = (id >> 24) & 0xff;
+		address[5] = (id >> 16) & 0xff;
+		address[6] = (id >> 8) & 0xff;
+		address[7] = (id >> 0) & 0xff;
+
+		Mac64Address mac64Address;
+		mac64Address.CopyFrom(address);
+
+		NS_LOG_UNCOND("Allocated Mac64Address " << mac64Address << "\n");
 
 		Address ndAddress = Address(mac64Address);
 		nd->SetAddress(ndAddress);
@@ -255,7 +271,7 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	///////////////////////////////////////
 
 	////// Waiting for contiki to live the moment /////////
-	NS_LOG_LOGIC("ns-3 waiting for contikis at " << Simulator::Now() << std::endl);
+	NS_LOG_UNCOND("ns-3 waiting for contikis at " << Simulator::Now() << std::endl);
 	fflush(stdout);
 	if (sem_getvalue(m_sem_done, &rtval) == -1)
 		perror("sem_getvalue(m_sem_done) error");
