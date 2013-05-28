@@ -258,6 +258,7 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	int rtval; // to probe sem_done value
 	uint32_t N = GetNNodes(); // Number of nodes
 
+	newValue /= 1000000;
 	/////// Writing new time //////////////
 
 	NS_LOG_LOGIC("Handling new time step " << newValue);
@@ -271,7 +272,7 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	///////////////////////////////////////
 
 	////// Waiting for contiki to live the moment /////////
-	NS_LOG_UNCOND("ns-3 waiting for contikis at " << Simulator::Now() << std::endl);
+	NS_LOG_UNCOND("ns-3 waiting for contikis at " << newValue << " milliseconds" << std::endl);
 	fflush(stdout);
 	if (sem_getvalue(m_sem_done, &rtval) == -1)
 		perror("sem_getvalue(m_sem_done) error");
@@ -300,8 +301,8 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	//XXX This trick is to force ns-3 to go in slow motion so that
 	//Contiki can follow
 
-	//void (*f)(void) = 0;
-	//Simulator::ScheduleWithContext(0, MilliSeconds(1.0), f);
+	void (*f)(void) = 0;
+	Simulator::ScheduleWithContext(0, Seconds(1.0), f);
 
 }
 
