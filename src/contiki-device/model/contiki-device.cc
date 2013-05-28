@@ -272,7 +272,7 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	///////////////////////////////////////
 
 	////// Waiting for contiki to live the moment /////////
-	NS_LOG_UNCOND("ns-3 waiting for contikis at " << newValue << " milliseconds" << std::endl);
+	NS_LOG_LOGIC("ns-3 waiting for contikis at " << newValue << " milliseconds" << std::endl);
 	fflush(stdout);
 	if (sem_getvalue(m_sem_done, &rtval) == -1)
 		perror("sem_getvalue(m_sem_done) error");
