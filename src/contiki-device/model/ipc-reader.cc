@@ -53,7 +53,7 @@ void IpcReader::Start(Callback<void, uint8_t *, ssize_t> readCallback,
 	m_sem_traffic_go_name << "/ns_contiki_sem_traffic_go_" << m_nodeId;
 	m_sem_traffic_done_name << "/ns_contiki_sem_traffic_done_" << m_nodeId;
 
-	size_t m_traffic_size = 65536, m_time_size = 8;
+	size_t m_traffic_size = 1300, m_time_size = 8;
 
 	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(), O_RDWR, 0)) == -1)
 		NS_FATAL_ERROR("thread shm_open(shm_in) error" << strerror(errno));
