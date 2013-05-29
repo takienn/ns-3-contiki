@@ -17,7 +17,7 @@ namespace ns3 {
 IpcReader::Data ContikiIpcReader::DoRead(void) {
 	NS_LOG_FUNCTION_NOARGS ();
 
-	uint32_t bufferSize = 65536;
+	uint32_t bufferSize = 1300;
 	uint8_t *buf = (uint8_t *) malloc(bufferSize);
 	memset(buf, 0, bufferSize);
 
@@ -69,22 +69,23 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 NS_OBJECT_ENSURE_REGISTERED(ContikiNetDevice);
 
 TypeId ContikiNetDevice::GetTypeId(void) {
-	static TypeId tid =
-			TypeId("ns3::ContikiNetDevice").SetParent<NetDevice>().AddConstructor<
-					ContikiNetDevice>().AddAttribute("Start",
+	static TypeId tid = TypeId("ns3::ContikiNetDevice")
+			.SetParent<NetDevice>()
+			.AddConstructor<ContikiNetDevice>()
+			.AddAttribute("Start",
 					"The simulation time at which to spin up the socket device read thread.",
 					TimeValue(Seconds(0.)),
 					MakeTimeAccessor(&ContikiNetDevice::m_tStart),
-					MakeTimeChecker()).AddAttribute("Stop",
+					MakeTimeChecker())
+			.AddAttribute("Stop",
 					"The simulation time at which to tear down the socket device read thread.",
 					TimeValue(Seconds(0.)),
 					MakeTimeAccessor(&ContikiNetDevice::m_tStop),
 					MakeTimeChecker());
 	return tid;
 }
-//
+
 sem_t* ContikiNetDevice::m_sem_time = NULL;
-////sem_t* ContikiNetDevice::m_sem_timer = NULL;
 sem_t* ContikiNetDevice::m_sem_go = NULL;
 sem_t* ContikiNetDevice::m_sem_done = NULL;
 int ContikiNetDevice::m_shm_time = 0;
@@ -93,10 +94,9 @@ uint32_t ContikiNetDevice::m_nNodes = 0;
 
 ContikiNetDevice::ContikiNetDevice() :
 		m_node(0), m_ifIndex(0), m_traffic_in(NULL), m_traffic_out(NULL), m_traffic_size(
-				65536), m_time_size(8), m_startEvent(), m_stopEvent(), m_ipcReader(
+				1300), m_time_size(8), m_startEvent(), m_stopEvent(), m_ipcReader(
 				0) {
 	NS_LOG_FUNCTION_NOARGS ();
-	m_packetBuffer = new uint8_t[65536];
 
 	Start(m_tStart);
 }
@@ -137,8 +137,8 @@ void ContikiNetDevice::Start(Time tStart) {
 	m_startEvent = Simulator::Schedule(tStart,
 			&ContikiNetDevice::StartContikiDevice, this);
 
-	void (*f)(void) = 0;
-	Simulator::ScheduleWithContext(m_nodeId, NanoSeconds(1.0), f);
+//	void (*f)(void) = 0;
+//	Simulator::ScheduleWithContext(m_nodeId, NanoSeconds(1.0), f);
 }
 
 void ContikiNetDevice::Stop(Time tStop) {
@@ -598,18 +598,11 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	/* Forward packet to socket */
 	Ptr<Packet> p = packet->Copy();
 	NS_LOG_LOGIC ("Writing packet to shared memory");
+
+	m_packetBuffer = new uint8_t[1300];
 	p->CopyData(m_packetBuffer, p->GetSize());
 
 	NS_LOG_LOGIC("NS-3 is writing for node " << child << " on sem " << m_sem_out_name.str().c_str() << "\n");
-
-	int tmp = 0;
-
-	while(tmp == 0)
-	{
-		sem_getvalue(m_sem_out, &tmp);
-		NS_LOG_LOGIC("value of m_sem_out in node " << m_nodeId << " is " << tmp << "\n");
-		//sleep(1);
-	}
 
 
 	if (sem_wait(m_sem_out) == -1)
@@ -635,6 +628,8 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	NS_ABORT_MSG_IF(retval == (void * ) -1,
 			"ContikiNetDevice::ReceiveFromBridgedDevice(): memcpy() (AKA Write) error.");
 	NS_LOG_LOGIC ("End of receive packet handling on node " << m_node->GetId ());
+
+	delete[] m_packetBuffer;
 	return true;
 }
 
