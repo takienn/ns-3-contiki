@@ -111,7 +111,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
 		  MakeCallback(&ContikiNetDevice::ContikiClockHandle));
 
   /* Build Network Stack for all Nodes */
-  for (uint8_t i = 0; i < nodeCount; i++)
+  for (uint32_t i = 0; i < nodeCount; i++)
   {
     bridge[i] =  m_deviceFactory.Create<ContikiNetDevice> ();
     bridge[i]->SetMode(mode);
