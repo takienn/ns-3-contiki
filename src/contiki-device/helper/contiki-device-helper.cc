@@ -129,7 +129,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
     mac[i] = contikiMacHelper.Install(bridge[i]);
     /* Add PHY to ContikiNetDevice and ContikiMac */
     phy[i] = contikiPhyHelper.Install(bridge[i], mac[i], ContikiPhy::DSSS_O_QPSK_GHz);
-    contikiPhyHelper.EnablePcapAll("contiki-device", true);
+    //contikiPhyHelper.EnablePcapAll("contiki-device", true);
 
     /* Add Physical Components (Channel and Position) */
     contikiChannelHelper.Install(channel, bridge[i]);
