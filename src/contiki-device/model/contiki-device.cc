@@ -226,7 +226,7 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		Mac64Address mac64Address;
 		mac64Address.CopyFrom(address);
 
-		NS_LOG_UNCOND("Allocated Mac64Address " << mac64Address << "\n");
+		NS_LOG_LOGIC("Allocated Mac64Address " << mac64Address << "\n");
 
 		Address ndAddress = Address(mac64Address);
 		nd->SetAddress(ndAddress);
@@ -599,7 +599,7 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	Ptr<Packet> p = packet->Copy();
 	NS_LOG_LOGIC ("Writing packet to shared memory");
 
-	m_packetBuffer = new uint8_t[1300];
+	m_packetBuffer = new uint8_t[m_traffic_size];
 	p->CopyData(m_packetBuffer, p->GetSize());
 
 	NS_LOG_LOGIC("NS-3 is writing for node " << child << " on sem " << m_sem_out_name.str().c_str() << "\n");
