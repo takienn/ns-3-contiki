@@ -66,6 +66,23 @@ ContikiNetDeviceHelper::Install (Ptr<Node> node, Ptr<NetDevice> nd)
   return bridge;
 }
 
+Ptr<NetDevice>
+ContikiNetDeviceHelper::Install (Ptr<Node> node, Ptr<NetDevice> nd,std::string mode, std::string app)
+{
+  Ptr<ContikiNetDevice> bridge = m_deviceFactory.Create<ContikiNetDevice> ();
+  node->AddDevice (bridge);
+  bridge->SetBridgedNetDevice (nd);
+  bridge->SetApplication(app);
+
+  Simulator::GetImplementation()->TraceConnectWithoutContext("CurrentTs",
+  		  MakeCallback(&ContikiNetDevice::ContikiClockHandle));
+
+  bridge->SetNNodes(1);
+  bridge->SetMode(mode);
+
+  return bridge;
+}
+
 void
 ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::string apps)
 {
@@ -129,7 +146,7 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
     mac[i] = contikiMacHelper.Install(bridge[i]);
     /* Add PHY to ContikiNetDevice and ContikiMac */
     phy[i] = contikiPhyHelper.Install(bridge[i], mac[i], ContikiPhy::DSSS_O_QPSK_GHz);
-    //contikiPhyHelper.EnablePcapAll("contiki-device", true);
+    contikiPhyHelper.EnablePcapAll("contiki-device", true);
 
     /* Add Physical Components (Channel and Position) */
     contikiChannelHelper.Install(channel, bridge[i]);
