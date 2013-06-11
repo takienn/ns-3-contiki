@@ -41,15 +41,19 @@ main (int argc, char *argv[])
 		nNodes = 1;
 
   /* Create nNodes nodes */
-  NodeContainer nodes;
-  nodes.Create(nNodes);
+  NodeContainer contikiNodes;
+  contikiNodes.Create(nNodes);
+  NodeContainer wifiNodes;
+  wifiNodes.Create(1);
 
-  //WifiHelper wifiHelper;
-  //Ptr<WifiNetDevice> wifiDev;
+
+  WifiHelper wifiHelper;
+
+  Ptr<WifiNetDevice> wifiDev;
   /* Bridge nodes to Contiki processes */ 
 
   ContikiNetDeviceHelper contikiDeviceHelper;
-  contikiDeviceHelper.Install(nodes, "PHYOVERLAY", apps);
+  contikiDeviceHelper.Install(contikiNodes, "PHYOVERLAY", apps);
 
 
   Simulator::Stop (Seconds (sTime));

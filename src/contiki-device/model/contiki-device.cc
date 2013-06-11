@@ -137,8 +137,8 @@ void ContikiNetDevice::Start(Time tStart) {
 	m_startEvent = Simulator::Schedule(tStart,
 			&ContikiNetDevice::StartContikiDevice, this);
 
-//	void (*f)(void) = 0;
-//	Simulator::ScheduleWithContext(m_nodeId, NanoSeconds(1.0), f);
+	void (*f)(void) = 0;
+	Simulator::ScheduleWithContext(m_nodeId, NanoSeconds(1.0), f);
 }
 
 void ContikiNetDevice::Stop(Time tStop) {
@@ -258,14 +258,14 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	int rtval; // to probe sem_done value
 	uint32_t N = GetNNodes(); // Number of nodes
 
-	newValue /= 1000000;
+	uint64_t now = newValue / 1000000;
 	/////// Writing new time //////////////
 
 	NS_LOG_LOGIC("Handling new time step " << newValue);
 	if (sem_wait(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
-	memcpy(m_traffic_time, (void *) &newValue, 8);
+	memcpy(m_traffic_time, (void *) &now, 8);
 
 	if (sem_post(m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));

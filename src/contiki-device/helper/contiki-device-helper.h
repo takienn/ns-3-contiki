@@ -69,6 +69,9 @@ public:
    * \param node The Ptr<Node> to install the ContikiNetDevice in
    * \returns A pointer to the new ContikiNetDevice NetDevice.
    */
+
+  Ptr<NetDevice> Install (Ptr<Node> node, Ptr<NetDevice> nd, std::string mode,  std::string app);
+
   Ptr<ContikiNetDevice> Install (Ptr<Node> node);
 
   /**

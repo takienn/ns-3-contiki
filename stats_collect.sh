@@ -37,7 +37,7 @@ echo -----------------------------------
 echo -----------------------------------
 echo " number of nodes" 
 echo -----------------------------------
-for s in 2 5 10 20 50 100 150 200 250 300 350 400 500
+for s in 2 5 10 20 50 100 150 200
    do
      APPS=udp-server.so
 
@@ -48,7 +48,7 @@ for s in 2 5 10 20 50 100 150 200 250 300 350 400 500
 
 echo "Running for $s nodes"
 
-for ((m=0; $m< 32; m+=1)) ; do
+for ((m=0; $m< 10; m+=1)) ; do
     beginIt=`date`
 
         echo "Round $m of  32 -- started $beginIt"
