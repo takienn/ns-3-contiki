@@ -84,7 +84,25 @@ ContikiNetDeviceHelper::Install (Ptr<Node> node, Ptr<NetDevice> nd,std::string m
 }
 
 void
-ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::string apps)
+ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::string apps, bool pcaps)
+{
+	  /* Create Position of all Nodes */
+	  Ptr<MobilityModel> pos = CreateObject<ConstantPositionMobilityModel> ();
+	  pos->SetPosition (Vector (0.0, 0.0, 0.0));
+	  Ptr<PropagationDelayModel> propagationDelay =
+			  CreateObject<ConstantSpeedPropagationDelayModel>();
+
+	  Ptr<LogDistancePropagationLossModel> log = CreateObject<LogDistancePropagationLossModel> ();
+
+	  Install (nodes, pos, propagationDelay, log, mode, apps, pcaps);
+}
+
+void
+ContikiNetDeviceHelper::Install (NodeContainer nodes, Ptr<MobilityModel> pos,
+		Ptr<PropagationDelayModel> propagationDelay,
+		Ptr<LogDistancePropagationLossModel> propagationLoss,
+		std::string mode,
+		  std::string apps, bool pcaps)
 {
   uint32_t nodeCount = nodes.GetN();
 
@@ -112,13 +130,8 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
 
   /* Create Channel */
   Ptr<ContikiChannel> channel = contikiChannelHelper.Create();
-  channel->SetPropagationDelayModel (CreateObject<ConstantSpeedPropagationDelayModel> ());
-  Ptr<LogDistancePropagationLossModel> log = CreateObject<LogDistancePropagationLossModel> ();
-  channel->SetPropagationLossModel (log);
-
-  /* Create Position of all Nodes */
-  Ptr<MobilityModel> pos = CreateObject<ConstantPositionMobilityModel> ();
-  pos->SetPosition (Vector (0.0, 0.0, 0.0));
+  channel->SetPropagationDelayModel (propagationDelay);
+  channel->SetPropagationLossModel (propagationLoss);
 
 
   //
@@ -146,7 +159,9 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, std::string mode, std::str
     mac[i] = contikiMacHelper.Install(bridge[i]);
     /* Add PHY to ContikiNetDevice and ContikiMac */
     phy[i] = contikiPhyHelper.Install(bridge[i], mac[i], ContikiPhy::DSSS_O_QPSK_GHz);
-    contikiPhyHelper.EnablePcapAll("contiki-device", true);
+
+    if(pcaps)
+    	contikiPhyHelper.EnablePcapAll("contiki-device", true);
 
     /* Add Physical Components (Channel and Position) */
     contikiChannelHelper.Install(channel, bridge[i]);

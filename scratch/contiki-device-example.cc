@@ -53,7 +53,7 @@ main (int argc, char *argv[])
   /* Bridge nodes to Contiki processes */ 
 
   ContikiNetDeviceHelper contikiDeviceHelper;
-  contikiDeviceHelper.Install(contikiNodes, "PHYOVERLAY", apps);
+  contikiDeviceHelper.Install(contikiNodes, "PHYOVERLAY", apps, true);
 
 
   Simulator::Stop (Seconds (sTime));
