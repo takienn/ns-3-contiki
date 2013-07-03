@@ -81,9 +81,27 @@ public:
    * \param node The NodeContainer to install the various ContikiNetDevice objects.
    * \param path The path used to locate the executable for the fork/exec call.
    * \param mode The stack operation mode (MACOVERLAY or PHYOVERLAY; medium emulation or layer 2 and medium emulation).
+   * \param pcaps Gennerates or not the pcap files for the nodes.
    */
-  void Install (NodeContainer nodes, std::string mode, std::string apps);
+  void Install (NodeContainer nodes, std::string mode, std::string apps, bool pcaps);
 
+  /**
+   * This method installs the entire Network Stack to a collection of Nodes.
+   * All nodes are located on the same vector co-ordinate and use the same executable for fork/exec.
+   *
+   * \param node The NodeContainer to install the various ContikiNetDevice objects.
+   * \param path The path used to locate the executable for the fork/exec call.
+   * \param mode The stack operation mode (MACOVERLAY or PHYOVERLAY; medium emulation or layer 2 and medium emulation).
+   * \param pos The mobility model that should be used for the nodes.
+   * \param propagationDelay The propagation delay model for the channel.
+   * \param propagationLoss The propagation loss model for the channel.
+   * \param pcaps Gennerates or not the pcap files for the nodes.
+   */
+  void Install (NodeContainer nodes, Ptr<MobilityModel> pos,
+		  Ptr<PropagationDelayModel>  propagationDelay,
+		  Ptr<LogDistancePropagationLossModel> propagationLoss,
+		  std::string mode,
+		  std::string apps, bool pcaps);
 
 private:
   ObjectFactory m_deviceFactory;
