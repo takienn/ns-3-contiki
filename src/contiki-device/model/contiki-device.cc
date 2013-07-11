@@ -5,10 +5,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <string>
+#include <sstream>
 
 #include "contiki-device.h"
 
-extern "C" void ContikiMain(char *nodeId, int mode, const char *addr, char *app);
+extern "C" void ContikiMain(char *nodeId, int mode, const char *addr, char *app,
+		sem_t *sem_go, sem_t *sem_done, sem_t *sem_traffic_go, sem_t *sem_traffic_done);
 
 NS_LOG_COMPONENT_DEFINE("ContikiNetDevice");
 
@@ -26,43 +28,35 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 	size_t input_size = 0;
 
 	fflush(stdout);
-	int rtval;
-	sem_getvalue(m_sem_traffic_done, &rtval);
-	if (rtval == 1) {
+	NS_LOG_LOGIC("contiki wrote something " << m_nodeId);
 
-		NS_LOG_LOGIC("contiki wrote something " << m_nodeId);
+	if (sem_wait(m_sem_in) == -1)
+		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
-		if (sem_wait(m_sem_in) == -1)
-			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
+	NS_LOG_LOGIC("ns3 reading " << m_nodeId);
+	// First read input size
+	memcpy(&input_size, m_traffic_in+1, sizeof(size_t));
 
-		NS_LOG_LOGIC("ns3 reading " << m_nodeId);
-		// First read input size
-		memcpy(&input_size, m_traffic_in, sizeof(size_t));
+	// Now read input
+	memcpy(buf, m_traffic_in + sizeof(size_t)+1, input_size);
+	memset(m_traffic_in, 0, bufferSize + sizeof(size_t)+1);
 
-		// Now read input
-		memcpy(buf, m_traffic_in + sizeof(size_t), input_size);
-		memset(m_traffic_in, 0, bufferSize + sizeof(size_t));
+	NS_LOG_LOGIC("releasing contiki after handling packet " << m_nodeId);
+	sem_post(m_sem_traffic_go);
 
-		NS_LOG_LOGIC("ns3 read " << m_nodeId);
+	NS_LOG_LOGIC("ns3 read " << m_nodeId);
 
-		NS_LOG_LOGIC("ns3 releasing contiki after read " << m_nodeId);
-		sem_wait(m_sem_traffic_done);
-		sem_post(m_sem_traffic_go);
-		NS_LOG_LOGIC("ns3 released contiki after read " << m_nodeId);
-
-		if (sem_post(m_sem_in) == -1)
-			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
-	}
+//	if (sem_post(m_sem_in) == -1)
+//		NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
 
 	if (input_size == 0) {
-		//NS_LOG_LOGIC ("ContikiNetDeviceFdReader::DoRead(): done" << m_nodeId);
+		NS_LOG_LOGIC ("Zero size input on DoRead : " << m_nodeId);
 		free(buf);
 		buf = 0;
 		//len = 0;
-	}
-
-	if (input_size > 0)
+	} else
 		NS_LOG_LOGIC("read data of length " << input_size);
+
 	return IpcReader::Data(buf, input_size);
 }
 
@@ -185,9 +179,6 @@ void ContikiNetDevice::StartContikiDevice(void) {
 	else if (child) { /*  This is the parent. */
 		NS_LOG_DEBUG ("Parent process");NS_LOG_LOGIC("Child PID: " << child);
 
-
-
-
 		//Ordering contiki to continue, now that all preparations are ready.
 //
 //		int status;
@@ -246,7 +237,8 @@ void ContikiNetDevice::StartContikiDevice(void) {
 
 		std::ostringstream nodeAddr;
 		nodeAddr << mac64Address;
-		ContikiMain(c_nodeId, 0, nodeAddr.str().c_str(), app);
+		ContikiMain(c_nodeId, 0, nodeAddr.str().c_str(), app, m_sem_go, m_sem_done,
+				m_ipcReader->m_sem_traffic_go, m_ipcReader->m_sem_traffic_done);
 
 	}
 

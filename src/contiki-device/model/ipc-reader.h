@@ -9,10 +9,13 @@
 #define IPC_READER_H_
 
 #include <stdint.h>
+#include <string.h>
+#include <map>
 
 #include "ns3/callback.h"
-#include "ns3/system-thread.h"
 #include "ns3/event-id.h"
+#include "ns3/system-thread.h"
+#include "ns3/system-mutex.h"
 
 #include <sstream>
 
@@ -28,6 +31,8 @@ namespace ns3 {
  */
 class IpcReader: public SimpleRefCount<IpcReader> {
 public:
+
+
 	IpcReader();
 	virtual ~IpcReader();
 
@@ -67,7 +72,46 @@ public:
 	 */
 	void SendAlarm(void);
 
+
+	/**
+	 * Sets a new scheduled event.
+	 */
+	void setSchedule(Time time, int nodeId);
+
+	/**
+	 * Returns the Map with the nodes that should wake up now and release the
+	 * time from the scheduling map
+	 */
+	std::list<int> getReleaseSchedule(Time time);
+
+	sem_t *m_sem_timer_go;
+	sem_t *m_sem_timer_done;
+	std::stringstream m_sem_timer_go_name;
+	std::stringstream m_sem_timer_done_name;
+
+	sem_t *m_sem_traffic_go;
+	sem_t *m_sem_traffic_done;
+	std::stringstream m_sem_traffic_go_name;
+	std::stringstream m_sem_traffic_done_name;
+
+	std::stringstream m_shm_in_name;
+	std::stringstream m_shm_timer_name;
+
+	std::stringstream m_sem_in_name;
+	std::stringstream m_sem_timer_name;
+
+	sem_t *m_sem_in;
+	sem_t *m_sem_timer;
+
+	int m_shm_in;
+	int m_shm_timer;
+
+	unsigned char *m_traffic_in;
+	unsigned char *m_traffic_timer;
+
+
 protected:
+
 
 	/**
 	 * \internal
@@ -100,35 +144,20 @@ protected:
 	 */
 	virtual IpcReader::Data DoRead(void) = 0;
 
-	sem_t *m_sem_timer_go;
-	sem_t *m_sem_timer_done;
-	std::stringstream m_sem_timer_go_name;
-	std::stringstream m_sem_timer_done_name;
-
-	sem_t *m_sem_traffic_go;
-	sem_t *m_sem_traffic_done;
-	std::stringstream m_sem_traffic_go_name;
-	std::stringstream m_sem_traffic_done_name;
-
-	std::stringstream m_shm_in_name;
-	std::stringstream m_shm_timer_name;
-
-	std::stringstream m_sem_in_name;
-	std::stringstream m_sem_timer_name;
-
-	sem_t *m_sem_in;
-	sem_t *m_sem_timer;
-
-	int m_shm_in;
-	int m_shm_timer;
-
-	unsigned char *m_traffic_in;
-	unsigned char *m_traffic_timer;
 
 	uint32_t m_nodeId;
 	pid_t m_pid;
 
 private:
+
+	// waked up nodes list to improve performance
+//	static std::list<int> nodesToWakeUp;
+//	nodesToWakeUp.insert(std::make_pair(5,"Hello"));
+	static std::map<Time,  std::list<int> >  nodesToWakeUp;
+	static SystemMutex m_controlNodesToWakeUp;
+
+//	static std::mutex controlWakeUpList;
+
 
 	void Run(void);
 	void DestroyEvent(void);

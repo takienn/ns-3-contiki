@@ -30,7 +30,7 @@ main (int argc, char *argv[])
 	uint32_t nNodes = 1;
 	uint32_t sTime = 60; // default 60 seconds
 
-	std::string apps = "udp-client.so,udp-server.so";
+	std::string apps = "udp-server.so,udp-client.so";
 
 	cmd.AddValue("nNodes", "Number of nodes", nNodes);
 	cmd.AddValue("sTime", "Simulation time", sTime);
