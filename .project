@@ -28,11 +28,11 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildCommand</key>
-					<value>${workspace_loc:/ns-3-dev-main}/waf</value>
+					<value>/home/dcamara/INRIA/repos/contikiAdapt/ns-3-contiki/waf</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>
-					<value>${workspace_loc:/ns-3-dev-main}</value>
+					<value>/home/dcamara/INRIA/repos/contikiAdapt/ns-3-contiki</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.cleanBuildTarget</key>

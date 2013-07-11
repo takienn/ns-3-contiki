@@ -23,6 +23,9 @@ NS_LOG_COMPONENT_DEFINE("IpcReader");
 
 namespace ns3 {
 
+std::map<Time,  std::list<int> > IpcReader::nodesToWakeUp;
+SystemMutex IpcReader::m_controlNodesToWakeUp;
+
 IpcReader::IpcReader() :
 		m_traffic_in(NULL), m_nodeId(0), m_pid(0), m_readCallback(0), m_readThread(
 				0), m_stop(false), m_destroyEvent() {
@@ -161,24 +164,32 @@ void IpcReader::Run(void) {
 
 		// Checking if contiki requested to schedule a timer
 		uint64_t timerval = 0;
+		uint8_t typeOfInfo = 0;
 		uint8_t timertype = 0;
 
-		int rtval;
-		sem_getvalue(m_sem_timer_done, &rtval);
-		if (rtval == 1) {
+		sem_post(m_sem_traffic_go);
 
+		if (sem_wait(m_sem_traffic_done) == -1)
+			NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
+
+		memcpy(&typeOfInfo, m_traffic_in, 1);
+
+		// 0 = Timer
+		// 1 = Data transfer
+		if (typeOfInfo == 0) {
 			NS_LOG_LOGIC("contiki requested a timer\n" << m_nodeId);
 
-			if (sem_wait(m_sem_timer) == -1)
-				NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
+//			if (sem_wait(m_sem_timer) == -1)
+//				NS_FATAL_ERROR("sem_wait(): error" << strerror (errno));
 
-			memcpy(&timertype, m_traffic_timer, 1);
-			memcpy(&timerval, m_traffic_timer + 1, 8);
+			memcpy(&timertype, m_traffic_in+1, 1);
+			memcpy(&timerval, m_traffic_in + 2, 8);
 
-			memset(m_traffic_timer, 0, 9);
-
+			memset(m_traffic_in, 0, 10);
 
 			NS_LOG_LOGIC("contiki's timer handled " << m_nodeId);
+			NS_LOG_LOGIC("releasing contiki after timer request " << m_nodeId);
+			sem_post(m_sem_traffic_go);
 
 			if (timertype != 0 && timertype != 1)
 				NS_FATAL_ERROR("wrong timertype " << timertype);
@@ -186,32 +197,25 @@ void IpcReader::Run(void) {
 			if (timerval > 0)
 				SetTimer(timerval, timertype);
 
-			NS_LOG_LOGIC("releasing contiki after timer request " << m_nodeId);
-
-			sem_wait(m_sem_timer_done);
-			sem_post(m_sem_timer_go);
-
 			NS_LOG_LOGIC("contiki released after timer request" << m_nodeId);
 
-			if (sem_post(m_sem_timer) == -1)
-				NS_FATAL_ERROR("sem_post(): error" << strerror (errno));
-		}
+//			if (sem_post(m_sem_timer) == -1)
+//				NS_FATAL_ERROR("sem_post(): error" << strerror (errno));
+		} else { // it is a packet
+			// Processing traffic sent by contiki
 
-		//////////////////////////////////////////////////////////
+			struct IpcReader::Data data = DoRead();
 
-		// Processing traffic sent by contiki
-
-		struct IpcReader::Data data = DoRead();
-
-		// reading stops when m_len is zero
-		if (data.m_len == 0) {
-			NS_LOG_INFO("read data of size 0");
-			//break;
-		}
-		// the callback is only called when m_len is positive (data
-		// is ignored if m_len is negative)
-		else if (data.m_len > 0) {
-			m_readCallback(data.m_buf, data.m_len);
+			// reading stops when m_len is zero
+			if (data.m_len == 0) {
+				NS_LOG_INFO("read data of size 0");
+				//break;
+			}
+			// the callback is only called when m_len is positive (data
+			// is ignored if m_len is negative)
+			else if (data.m_len > 0) {
+				m_readCallback(data.m_buf, data.m_len);
+			}
 		}
 
 	}
@@ -231,11 +235,52 @@ void IpcReader::SetTimer(uint64_t time, int type) {
 		Simulator::ScheduleWithContext(m_nodeId, MilliSeconds(time),
 				&IpcReader::SendAlarm, this);
 	} NS_LOG_LOGIC("SetTimer " << time << " of type " << type << "\n");
+
+	// registers the event
+	setSchedule(MilliSeconds(time), m_nodeId);
 }
 
 void IpcReader::SendAlarm(void) {
 	if (kill(m_pid, SIGALRM) == -1)
 		NS_FATAL_ERROR("kill(SIGALRM) failed: " << strerror(errno));
+}
+
+void IpcReader::setSchedule(Time time, int nodeId){
+    CriticalSection cs (m_controlNodesToWakeUp);
+	// adds the node id to the specific time scheduling list
+	if ( nodesToWakeUp.find(time) != nodesToWakeUp.end() ) {
+		nodesToWakeUp[time].push_back(nodeId);
+	}else { // it is the first node to be added to this time schedule
+
+		std::list<int> scheduledNodes;
+		scheduledNodes.push_back(nodeId);
+
+		std::pair<std::map<Time,  std::list<int> >::iterator,bool> ret;
+		ret = nodesToWakeUp.insert ( std::pair<Time,  std::list<int> >(time,scheduledNodes) );
+
+		if (ret.second==false) {
+			NS_LOG_UNCOND("UNEXPECTED, the time already exists, how it comes?");
+		}
+
+	}
+
+}
+
+
+std::list<int> IpcReader::getReleaseSchedule(Time time){
+
+    CriticalSection cs (m_controlNodesToWakeUp);
+	std::list<int> returnValue;
+
+	// searches for the time, if found some one updates the
+	// return value with the set of nodes to wake up and erase it from the list
+	// since the time for them has arrived
+	if ( nodesToWakeUp.find(time) != nodesToWakeUp.end() ) {
+		 returnValue = nodesToWakeUp[time];
+		 nodesToWakeUp.erase(time);
+	}
+
+	 return returnValue;
 }
 
 } // namespace ns3
