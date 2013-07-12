@@ -32,26 +32,27 @@ IpcReader::Data ContikiIpcReader::DoRead(void) {
 
 		NS_LOG_LOGIC("contiki wrote something " << m_nodeId);
 
-		if (sem_wait(m_sem_in) == -1)
-			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
+//		if (sem_wait(m_sem_in) == -1)
+//			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 
 		NS_LOG_LOGIC("ns3 reading " << m_nodeId);
 		// First read input size
-		memcpy(&input_size, m_traffic_in, sizeof(size_t));
+
+		memcpy(&input_size, m_traffic_in + 1, sizeof(size_t));
 
 		// Now read input
-		memcpy(buf, m_traffic_in + sizeof(size_t), input_size);
-		memset(m_traffic_in, 0, bufferSize + sizeof(size_t));
+		memcpy(buf, m_traffic_in + sizeof(size_t) + 1, input_size);
+		memset(m_traffic_in, 0, bufferSize + sizeof(size_t) + 1);
 
 		NS_LOG_LOGIC("ns3 read " << m_nodeId);
 
 		NS_LOG_LOGIC("ns3 releasing contiki after read " << m_nodeId);
-		sem_wait(m_sem_traffic_done);
+//		sem_wait(m_sem_traffic_done);
 		sem_post(m_sem_traffic_go);
 		NS_LOG_LOGIC("ns3 released contiki after read " << m_nodeId);
 
-		if (sem_post(m_sem_in) == -1)
-			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
+//		if (sem_post(m_sem_in) == -1)
+//			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
 	}
 
 	if (input_size == 0) {
@@ -321,7 +322,7 @@ void ContikiNetDevice::StopContikiDevice(void) {
 	//unmapping mapped memory addresses and closing semaphore variables
 
 	if (m_traffic_in != NULL) {
-		if (munmap(m_traffic_in, m_traffic_size + sizeof(size_t)) == -1)
+		if (munmap(m_traffic_in, m_traffic_size + sizeof(size_t)+1) == -1)
 			NS_FATAL_ERROR("munmap() failed: " << strerror(errno));
 
 		m_traffic_in = NULL;
@@ -379,7 +380,7 @@ void ContikiNetDevice::CreateIpc(void) {
 	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(),
 			O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
 			== -1)
-		NS_FATAL_ERROR("shm_open(m_shm_in) " << strerror(errno));
+		NS_FATAL_ERROR("shm_open(m_shm_in) ");
 
 	if ((m_shm_out = shm_open(m_shm_out_name.str().c_str(),
 			O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
@@ -451,7 +452,7 @@ void ContikiNetDevice::CreateIpc(void) {
 
 void ContikiNetDevice::ClearIpc() {
 
-	munmap(m_traffic_in, sizeof(size_t) + m_traffic_size);
+	munmap(m_traffic_in, sizeof(size_t) + m_traffic_size+1);
 	munmap(m_traffic_out, sizeof(size_t) + m_traffic_size);
 	munmap(m_traffic_time, m_time_size);
 
