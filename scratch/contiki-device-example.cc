@@ -25,6 +25,7 @@ main (int argc, char *argv[])
   //GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));
   //LogComponentEnable("DefaultSimulatorImpl", LOG_LEVEL_LOGIC);
 
+
 	CommandLine cmd;
 
 	uint32_t nNodes = 1;
