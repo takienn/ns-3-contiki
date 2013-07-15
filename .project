@@ -28,7 +28,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildCommand</key>
-					<value>/home/dcamara/INRIA/repos/contikiAdapt/ns-3-contiki/waf</value>
+					<value>/home/dcamara/INRIA/repos/contikiAdapt/ns-3-contiki/runwaf.sh</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>

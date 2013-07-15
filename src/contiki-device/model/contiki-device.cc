@@ -247,7 +247,18 @@ void ContikiNetDevice::StartContikiDevice(void) {
 
 		std::ostringstream nodeAddr;
 		nodeAddr << mac64Address;
-		ContikiMain(c_nodeId, 0, nodeAddr.str().c_str(), app);
+
+
+		//		ContikiMain(c_nodeId, 0, nodeAddr.str().c_str(), app);
+
+
+		char tmp[24]={0x0};
+		sprintf(tmp,"%d",0);
+
+        execl("/home/dcamara/INRIA/repos/contikiAdapt/contiki-ns-3/examples/dummy/dummy.ns3" ,
+        	  "/home/dcamara/INRIA/repos/contikiAdapt/contiki-ns-3/examples/dummy/dummy.ns3" ,
+        	  c_nodeId, tmp, nodeAddr.str().c_str(), app, (char *) 0);
+        printf("test");
 
 	}
 
