@@ -318,8 +318,9 @@ void IpcReader::Stop(void) {
 
 	// Cleans the sem_time, a special case
 	// Free alocated Shared memory
-	if(sharedSemaphores->shm_time_id != -1){
+	if(m_shm_time != NULL){
 		sem_destroy(&sharedSemaphores->sem_time);
+		shmdt(&m_shm_time);
 		shmdt(&sharedSemaphores->shm_time);
 		shmctl(sharedSemaphores->shm_time_id, IPC_RMID, 0);
 		sharedSemaphores->shm_time_id = -1;
@@ -679,7 +680,7 @@ void IpcReader::SetTimer(Time time, int type) {
 				this);
 	};
 	// registers the event
-	Time timeToShedule = (time + Simulator::Now());
+//	Time timeToShedule = (time + Simulator::Now());
 	setSchedule(time, m_nodeId);
 }
 
