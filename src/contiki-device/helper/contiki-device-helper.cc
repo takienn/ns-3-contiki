@@ -75,7 +75,7 @@ ContikiNetDeviceHelper::Install (Ptr<Node> node, Ptr<NetDevice> nd,std::string m
   bridge->SetApplication(app);
 
   Simulator::GetImplementation()->TraceConnectWithoutContext("CurrentTs",
-  		  MakeCallback(&ContikiNetDevice::ContikiClockHandle));
+  		  MakeCallback(ContikiNetDevice::ContikiClockHandle));
 
   bridge->SetNNodes(1);
   bridge->SetMode(mode);

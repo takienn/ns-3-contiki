@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sstream>
+#include <semaphore.h>
 
 #include "ipc-reader.h"
 #include "contiki-mac.h"
@@ -38,14 +39,10 @@
 
 namespace ns3 {
 
-class ContikiIpcReader: public IpcReader {
-private:
-	IpcReader::Data DoRead(void);
-};
-
 class Node;
 class ContikiMac;
 class ContikiPhy;
+class IpcReader;
 
 /**
  * \ingroup socket-bridge
@@ -233,38 +230,7 @@ public:
 	 * \param oldValue Old time value
 	 * \param newValue New time value
 	 */
-	 static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
-
-	/**
-	 * \internal
-	 * semaphore for time update operations
-	 */
-	 static sem_t *m_sem_time;
-
-	/**
-	 * \internal
-	 * semaphore for timer scheduling operations
-	 */
-	sem_t *m_sem_timer;
-
-	sem_t *m_sem_timer_go;
-	sem_t *m_sem_timer_done;
-
-	/**
-	 * \internal
-	 * Shared Memory Object for time
-	 */
-	static int m_shm_time;
-
-	/**
-	 * \internal
-	 * The pointer to a shared memory address where to synchronize
-	 * current simulation time value.
-	 */
-	static uint8_t *m_traffic_time;
-
-	static sem_t *m_sem_go;
-	static sem_t *m_sem_done;
+	static void ContikiClockHandle(uint64_t oldValue, uint64_t newValue);
 
 	/**
 	 * \internal
@@ -395,112 +361,6 @@ private:
 
 	/**
 	 * \internal
-	 * The pointer to a shared memory address where to receive traffic from.
-	 */
-	uint8_t *m_traffic_in;
-
-	/**
-	 * \internal
-	 * The pointer to a shared memory address where to send traffic to.
-	 */
-	uint8_t *m_traffic_out;
-
-	/**
-	 * \internal
-	 * Shared Memory Object for input traffic
-	 */
-	int m_shm_in;
-
-	/**
-	 * \internal
-	 * Shared Memory Object for output traffic
-	 */
-	int m_shm_out;
-
-	/**
-	 * \internal
-	 * Shared Memory Onject for timers
-	 */
-	int m_shm_timer;
-
-	/**
-	 * \internal
-	 * Name of input shared memory segment
-	 */
-	std::stringstream m_shm_in_name;
-
-	/**
-	 * \internal
-	 * Name of output shared memory segment
-	 */
-	std::stringstream m_shm_out_name;
-
-	/**
-	 * \internal
-	 * Name of time shared memory segment
-	 */
-	std::stringstream m_shm_time_name;
-
-	/**
-	 * \internal
-	 * Name of timer shared memory segment
-	 */
-	std::stringstream m_shm_timer_name;
-
-	/**
-	 * \internal
-	 * Semaphore for writing operations
-	 */
-	sem_t *m_sem_out;
-
-	/**
-	 * \internal
-	 * Semaphore for reading operations
-	 */
-	sem_t *m_sem_in;
-
-	std::stringstream m_sem_go_name;
-	std::stringstream m_sem_done_name;
-	/**
-	 * \internal
-	 * Name of input semaphore
-	 */
-	std::stringstream m_sem_in_name;
-
-	/**
-	 * \internal
-	 * Name of output semaphore
-	 */
-	std::stringstream m_sem_out_name;
-
-	/**
-	 * \internal
-	 * Name of time semaphore
-	 */
-	std::stringstream m_sem_time_name;
-
-	/**
-	 * \internal
-	 * Name of timer semaphore
-	 */
-	std::stringstream m_sem_timer_name;
-	std::stringstream m_sem_timer_go_name;
-	std::stringstream m_sem_timer_done_name;
-
-	/*
-	 * \internal
-	 * Size of traffic buffer
-	 */
-	size_t m_traffic_size;
-
-	/*
-	 * \internal
-	 * Size of time buffer
-	 */
-	size_t m_time_size;
-
-	/**
-	 * \internal
 	 *
 	 * The ID of the ns-3 event used to schedule the start up of the underlying
 	 * host Socket device and ns-3 read thread.
@@ -521,7 +381,7 @@ private:
 	 * Includes the ns-3 read thread used to do blocking reads on the fd
 	 * corresponding to the host device.
 	 */
-	Ptr<ContikiIpcReader> m_ipcReader;
+	Ptr<IpcReader> m_ipcReader;
 
 	/**
 	 * \internal
