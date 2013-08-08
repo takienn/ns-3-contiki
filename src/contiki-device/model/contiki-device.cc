@@ -204,11 +204,11 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		std::ostringstream nodeAddr;
 		nodeAddr << mac64Address;
 
-		/* shared memory segment id           */
-		int shMemSegID;
-
-		/* ptr to shared memory segment       */
-		void *shMemSeg;
+//		/* shared memory segment id           */
+//		int shMemSegID;
+//
+//		/* ptr to shared memory segment       */
+//		void *shMemSeg;
 
 //		 shMemSegID = shmget((key_t)(1095 + m_nodeId),sizeof(sem_t),SHM_R|SHM_W);
 //		 shMemSeg = shmat(shMemSegID,0,0);
@@ -513,9 +513,7 @@ void ContikiNetDevice::ForwardToBridgedDevice(uint8_t *buf, ssize_t len) {
 	//
 	Ptr<Packet> packet = Create<Packet>(reinterpret_cast<const uint8_t *>(buf),
 			len);
-	free(buf);
-	buf = 0;
-	Time t = Simulator::Now();
+//	Time t = Simulator::Now();
 
 	Address src, dst;
 	uint16_t type;
@@ -535,6 +533,8 @@ void ContikiNetDevice::ForwardToBridgedDevice(uint8_t *buf, ssize_t len) {
 	NS_LOG_LOGIC ("Pkt LengthType is " << type);
 	NS_LOG_LOGIC ("Forwarding packet from external socket to simulated network");
 
+	free(buf);
+	buf = 0;
 
 	if (m_mode == MACPHYOVERLAY) {
 		if (m_ns3AddressRewritten == false) {
@@ -663,7 +663,7 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	delete[] m_packetBuffer;
 
 	// registers the receiving packet event
-	Time t = Simulator::Now();
+//	Time t = Simulator::Now();
 	m_ipcReader->SetRelativeTimer(); //TODO: See the consideration of the channel delay
 
 	return true;
