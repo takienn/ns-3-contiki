@@ -94,6 +94,8 @@ ContikiChannel::Send (Ptr<ContikiPhy> sender, Ptr<const Packet> packet, double t
           Simulator::ScheduleWithContext (dstNode,
                                           delay, &ContikiChannel::Receive, this,
                                           j, copy, rxPowerDbm);
+
+          // OR SET THE SCHEDULE HERE
         }
     }
 }
