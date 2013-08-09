@@ -241,7 +241,10 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 //	int rtval; // to probe sem_done value
 //	uint32_t N = GetNNodes(); // Number of nodes
 
+	// This is because  Contiki's time granularity is Miliseconds and for ns-3
+	// it is in nanoseconds
 	now = newValue / 1000000;
+
 	/////// Writing new time //////////////
 
 	NS_LOG_LOGIC("Handling new time step " << newValue);
@@ -556,6 +559,8 @@ void ContikiNetDevice::ForwardToBridgedDevice(uint8_t *buf, ssize_t len) {
 		Address nullAddr = Address();
 		m_bridgedDevice->Send(packet, nullAddr, uint16_t(0));
 	}
+
+
 }
 
 Ptr<Packet> ContikiNetDevice::Filter(Ptr<Packet> p, Address *src, Address *dst,
