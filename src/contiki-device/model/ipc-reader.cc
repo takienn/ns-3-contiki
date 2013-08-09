@@ -34,7 +34,7 @@ SystemMutex IpcReader::m_controlNodesToWakeUp;
 sem_t IpcReader::m_sem_time;
 int IpcReader::m_time_Memory_Id;
 
-size_t IpcReader::m_traffic_size = 1300;
+size_t IpcReader::m_traffic_size = 1500;
 size_t IpcReader::m_time_size = 8;
 int* IpcReader::m_shm_time = NULL;
 
