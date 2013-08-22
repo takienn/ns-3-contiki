@@ -23,9 +23,15 @@ NS_LOG_COMPONENT_DEFINE("IpcReader");
 
 namespace ns3 {
 #ifndef DATA_TYPE
-#define DATA_TYPE 0
-#define TIMER_TYPE 1
+const uint8_t DATA_TYPE = 0;
+const uint8_t TIMER_TYPE = 1;
+//#define DATA_TYPE 0
+//#define TIMER_TYPE 1
 #endif
+//#ifndef DATA_TYPE
+//#define DATA_TYPE 0
+//#define TIMER_TYPE 1
+//#endif
 
 std::map<uint32_t, sem_t*> IpcReader::listOfGoSemaphores;
 std::map<uint32_t, sem_t*> IpcReader::listOfDoneSemaphores;
@@ -52,6 +58,7 @@ void* alocateSharedMemory(int uniqueKey, int sizeOfMemory, int *id) {
 	//NS_ASSERT_MSG (m_writeThread == 0, "ipc write thread already exists");
 	int shMemSegID; // shared memory segment id
 	void* shMemSeg; //ptr to shared memory segment
+
 	// gets the memory segment
 	if ((shMemSegID = shmget((key_t)(uniqueKey), sizeOfMemory,
 			IPC_CREAT | SHM_R | SHM_W)) < 0) {
@@ -91,10 +98,6 @@ void IpcReader::initIpc() {
 			&sharedSemaphores->traffic_out_id);
 	sharedSemaphores->traffic_out = (unsigned char*) ((shMemSeg));
 
-//	shMemSeg = alocateSharedMemory((START_CONST + (m_nodeId*10) + IN),
-//			m_traffic_size + sizeof(size_t), &sharedSemaphores->shm_in_id);
-//	sharedSemaphores->shm_in = (int*) ((shMemSeg));
-
 	// Special case the time, that is unique!
 	// Instantiates only once, it is a shared memory
 	if (m_shm_time == NULL) {
@@ -112,138 +115,34 @@ void IpcReader::initIpc() {
 	sharedSemaphores->shm_time = m_shm_time;
 	sharedSemaphores->shm_time_id = m_time_Memory_Id;
 
-	//
-	//	// Preparing shm/sem names
-	//	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
-	//	m_shm_out_name << "/ns_contiki_traffic_out_" << m_nodeId;
-	//	m_shm_timer_name << "/ns_contiki_traffic_timer_" << m_nodeId;
-	//	m_shm_time_name << "/ns_contiki_traffic_time_";// << m_nodeId;
-	//
-	//	//Assuring there are no shm/sem leftovers from previous executions
-	//	//ClearIpc();
-	//Now Assuring the creation of ALL shm/sem objects but traffic_in and traffic_timer
-	// are left for the read thread (where they are used) to map.
-	//	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(),
-	//			O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
-	//			== -1)
-	//		NS_FATAL_ERROR("shm_open(m_shm_in) " << strerror(errno));
-	//
-	//	if ((m_shm_out = shm_open(m_shm_out_name.str().c_str(),
-	//			O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
-	//			== -1)
-	//		NS_FATAL_ERROR("shm_open(m_shm_out)" << strerror(errno));
-	//
-	//	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(),
-	//			O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-	//		NS_FATAL_ERROR("shm_open()" << strerror(errno));
-	//
-	//	if ((m_shm_time = shm_open(m_shm_time_name.str().c_str(), O_RDWR | O_CREAT,
-	//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-	//		NS_FATAL_ERROR("shm_open(m_shm_time) " << strerror(errno));
-	//
-	//	if (ftruncate(m_shm_in, m_traffic_size + sizeof(size_t)) == -1)
-	//		NS_FATAL_ERROR("ftruncate(m_shm_in) " << strerror(errno));
-	//
-	//	if (ftruncate(m_shm_out, m_traffic_size + sizeof(size_t)) == -1)
-	//		NS_FATAL_ERROR("shm_open(m_shm_out) " << strerror(errno));
-	//
-	//	if (ftruncate(m_shm_time, m_time_size) == -1)
-	//		NS_FATAL_ERROR("ftruncate(m_shm_time)" << strerror(errno));
-	//
-	//	if (ftruncate(m_shm_timer, m_time_size + 1) == -1)
-	//		NS_FATAL_ERROR("ftruncate(m_shm_timer)" << strerror(errno));
-	//
-	//	/* XXX A note here: not just data is trafered but also data size
-	//	 * it is saved in sizeof(size_t) memory.
-	//	 */
-	//
-	//	m_traffic_out = (uint8_t *) mmap(NULL,
-	//			sizeof(size_t) + m_traffic_size + sizeof(size_t),
-	//			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_out, 0);
-	//
-	//	if (m_traffic_time == NULL)
-	//		m_traffic_time = (uint8_t *) mmap(NULL, m_time_size, PROT_READ | PROT_WRITE,
-	//				MAP_SHARED, m_shm_time, 0);
-	//	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
-	//	m_shm_timer_name << "/ns_contiki_traffic_timer_" << m_nodeId;
-	//	m_sem_in_name << "/ns_contiki_sem_in_" << m_nodeId;
-	//	m_sem_timer_name << "/ns_contiki_sem_timer_" << m_nodeId;
-	//	m_sem_timer_go_name << "/ns_contiki_sem_timer_go_" << m_nodeId;
-	//	m_sem_timer_done_name << "/ns_contiki_sem_timer_done_" << m_nodeId;
-	//	m_sem_traffic_go_name << "/ns_contiki_sem_traffic_go_" << m_nodeId;
-	//	m_sem_traffic_done_name << "/ns_contiki_sem_traffic_done_" << m_nodeId;
-	//
-	//	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(), O_RDWR, 0)) == -1)
-	//		NS_FATAL_ERROR("thread shm_open(shm_in) error" << strerror(errno));
-	//
-	//	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(), O_RDWR, 0))
-	//			== -1)
-	//		NS_FATAL_ERROR("thread shm_open(shm_timer)" << strerror(errno));
-	//
-	//	m_traffic_in = (uint8_t*) (mmap(NULL, m_traffic_size + sizeof(size_t),
-	//			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_in, 0));
-	//	m_traffic_timer = (uint8_t*) (mmap(NULL, m_time_size + 1,
-	//			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_timer, 0));
-	// initializes the time semaphore just once we just need one instance
-
-	// ****************
-	// initialize semaphores
-	// ****************
-
-	//	if ((m_sem_in = sem_open(m_sem_in_name.str().c_str(), O_CREAT | O_EXCL,
-	//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
-	//		NS_FATAL_ERROR(" ns -3 sem_open(sem_in) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_in, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_in) failed: " << strerror(errno));
 
-	//	if ((m_sem_out = sem_open(m_sem_in_name.str().c_str(), O_CREAT | O_EXCL,
-	//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
-	//		NS_FATAL_ERROR(" ns -3 sem_open(sem_in) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_out, 1, 1))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_out) failed: " << strerror(errno));
 
-	//	if ((m_sem_timer = sem_open(m_sem_timer_name.str().c_str(), O_CREAT,
-	//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
-	//		NS_FATAL_ERROR("ns -3 sem_open(sem_timer) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_timer, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_timer) failed: " << strerror(errno));
 
-	//	if ((m_sem_timer_done = sem_open(m_sem_timer_done_name.str().c_str(),
-	//			O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
-	//		NS_FATAL_ERROR("ns -3 sem_open(m_sem_timer_done) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_timer_done, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_timer_done) failed: " << strerror(errno));
 
-	//	if ((m_sem_timer_go = sem_open(m_sem_timer_done_name.str().c_str(),
-	//			O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
-	//		NS_FATAL_ERROR("ns -3 sem_open(m_sem_timer_done) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_timer_go, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_timer_go) failed: " << strerror(errno));
 
-	//	if ((m_sem_traffic_go = sem_open(m_sem_traffic_go_name.str().c_str(),
-	//			O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
-	//		NS_FATAL_ERROR(
-	//				"ns -3 sem_open(m_sem_traffic_go) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_traffic_go, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_traffic_go) failed: " << strerror(errno));
 
-	//	if ((m_sem_traffic_done = sem_open(m_sem_traffic_done_name.str().c_str(),
-	//			O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 0)) == SEM_FAILED )
-	//		NS_FATAL_ERROR(
-	//				"ns -3 sem_open(m_sem_traffic_done_name) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_traffic_done, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_traffic_done) failed: " << strerror(errno));
 
-	/// Main loop go and done semaphores
-	//	if ((m_sem_go = sem_open(m_sem_go_name.str().c_str(), O_CREAT,
-	//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
 	if (sem_init(&sharedSemaphores->sem_go, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_go) failed: " << strerror(errno));
@@ -252,9 +151,6 @@ void IpcReader::initIpc() {
 	listOfGoSemaphores.insert(
 			std::pair<uint32_t, sem_t*>(m_nodeId, &sharedSemaphores->sem_go));
 
-	//	if ((m_sem_done = sem_open(m_sem_done_name.str().c_str(), O_CREAT,
-	//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
-	//		NS_FATAL_ERROR("ns -3 sem_open(sem_done) failed: " << strerror(errno));
 	if (sem_init(&sharedSemaphores->sem_done, 1, 0))
 		NS_FATAL_ERROR(
 				"ns -3 sem_init(sharedSemaphores->sem_done) failed: " << strerror(errno));
@@ -347,10 +243,6 @@ void IpcReader::Stop(void) {
 	shmdt(&sharedSemaphores->traffic_out);
 	shmctl(sharedSemaphores->traffic_out_id, IPC_RMID, 0);
 
-//	shmdt(sharedSemaphores->shm_in);
-//	shmctl(sharedSemaphores->shm_in_id, IPC_RMID, 0);
-
-
 	int id = sharedSemaphores->id;
 	shmdt(&sharedSemaphores);
 	shmctl(id, IPC_RMID, 0);
@@ -364,101 +256,11 @@ void IpcReader::Stop(void) {
 	NS_LOG_LOGIC("Cleared semaphores and Shared memories\n");
 }
 
-//IpcReader::Data IpcReader::DoRead(void) {
-//	uint32_t bufferSize = 1300;
-//	uint8_t* buf = (uint8_t*) ((malloc(bufferSize)));
-//	memset(buf, 0, bufferSize);
-//	NS_ABORT_MSG_IF(buf == 0, "malloc() failed");
-//	size_t input_size = 0;
-//
-//	NS_LOG_LOGIC("ns3 reading " << m_nodeId);
-//	// First read input size
-//	memcpy(&input_size, sharedSemaphores->traffic_in+1, sizeof(size_t));
-//
-//	// Now read input
-//	memcpy(buf, sharedSemaphores->traffic_in + sizeof(size_t)+1, input_size);
-//	memset(sharedSemaphores->traffic_in, 0, bufferSize + sizeof(size_t)+1);
-//
-//	if (input_size == 0) {
-//		//NS_LOG_LOGIC ("ContikiNetDeviceFdReader::DoRead(): done" << m_nodeId);
-//		free(buf);
-//		buf = 0;
-//		//len = 0;
-//	}
-//	if (input_size > 0)
-//		NS_LOG_LOGIC("read data of length " << input_size);
-//
-//	return IpcReader::Data(buf, input_size);
-//}
-
-//IpcReader::Data IpcReader::DoRead(void) {
-//	uint32_t bufferSize = 1300;
-//	uint8_t* buf = (uint8_t*) ((malloc(bufferSize)));
-//	memset(buf, 0, bufferSize);
-//	NS_ABORT_MSG_IF(buf == 0, "malloc() failed");
-//	size_t input_size = 0;
-//	fflush (stdout);
-//	int rtval;
-//	sem_getvalue(&sharedSemaphores->sem_traffic_done, &rtval);
-//	if (rtval == 1) {
-//
-//		NS_LOG_LOGIC("contiki wrote something " << m_nodeId);
-//
-//		std::cout << " ---Wait Device  sharedSemaphores->sem_in DoRead at "
-//				<< m_nodeId << " \n";
-//		if (sem_wait(&sharedSemaphores->sem_in) == -1)
-//			NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
-//		std::cout << " ---Wait Device  sharedSemaphores->sem_in DoRead at "
-//				<< m_nodeId << " \n";
-//
-//		NS_LOG_LOGIC("ns3 reading " << m_nodeId);
-//		// First read input size
-//		memcpy(&input_size, sharedSemaphores->traffic_in, sizeof(size_t));
-//
-//		// Now read input
-//		memcpy(buf, sharedSemaphores->traffic_in + sizeof(size_t), input_size);
-//		memset(sharedSemaphores->traffic_in, 0, bufferSize + sizeof(size_t));
-//
-//		NS_LOG_LOGIC("ns3 read " << m_nodeId);
-//
-//		NS_LOG_LOGIC("ns3 releasing contiki after read " << m_nodeId);
-//		std::cout
-//				<< " ---Wait Device  sharedSemaphores->sem_traffic_done DoRead at "
-//				<< m_nodeId << " \n";
-//		sem_wait(&sharedSemaphores->sem_traffic_done);
-//		std::cout
-//				<< " ---Wait Device  sharedSemaphores->sem_traffic_done DoRead at "
-//				<< m_nodeId << " \n";
-//		std::cout
-//				<< " ---Post Device  sharedSemaphores->sem_traffic_go DoRead at "
-//				<< m_nodeId << " \n";
-//		sem_post(&sharedSemaphores->sem_traffic_go);
-//		std::cout
-//				<< " ---Post Device  sharedSemaphores->sem_traffic_go DoRead at "
-//				<< m_nodeId << " \n";
-//		NS_LOG_LOGIC("ns3 released contiki after read " << m_nodeId);
-//
-//		std::cout << " ---Post Device  sharedSemaphores->sem_in DoRead at "
-//				<< m_nodeId << " \n";
-//		if (sem_post(&sharedSemaphores->sem_in) == -1)
-//			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno));
-//		std::cout << " ---Post Device  sharedSemaphores->sem_in DoRead at "
-//				<< m_nodeId << " \n";
-//	}
-//	if (input_size == 0) {
-//		//NS_LOG_LOGIC ("ContikiNetDeviceFdReader::DoRead(): done" << m_nodeId);
-//		free(buf);
-//		buf = 0;
-//		//len = 0;
-//	}
-//	if (input_size > 0)
-//		NS_LOG_LOGIC("read data of length " << input_size);
-//
-//	return IpcReader::Data(buf, input_size);
-//}
 
 // This runs in a separate thread
 void IpcReader::Run(void) {
+
+	// Never ending loop to wait for Contiki requests for new packets and timers
 	for (;;) {
 
 		/////////////////////////////////////////////////////////
@@ -477,7 +279,7 @@ void IpcReader::Run(void) {
 			break;
 		}
 
-
+		// Finds out what is in the pipe (Data or timer request)
 		memcpy(&typeOfInfo, sharedSemaphores->traffic_in, 1);
 
 		// 0 = Data transfer
@@ -486,21 +288,16 @@ void IpcReader::Run(void) {
 
 			NS_LOG_LOGIC("contiki requested a timer\n" << m_nodeId);
 
-			std::cout
-					<< " ---Wait ipcReader  sharedSemaphores->sem_timer Run at "
-					<< m_nodeId << " \n";
-//			if (sem_wait(&sharedSemaphores->sem_timer) == -1)
-//				NS_FATAL_ERROR("sem_wait(): error" << strerror(errno));
-//			std::cout
-//					<< " ---Wait ipcReader  sharedSemaphores->sem_timer Run at "
-//					<< m_nodeId << " \n";
+			NS_LOG_LOGIC(" ---Wait ipcReader  sharedSemaphores->sem_timer Run at "
+					<< m_nodeId << " \n");
 
 			memcpy(&timertype, sharedSemaphores->traffic_in + 1, 1);
 			memcpy(&timerval, sharedSemaphores->traffic_in + 2, 8);
 
 			memset(sharedSemaphores->traffic_in, 0, 10);
 
-			NS_LOG_LOGIC("contiki's timer handled " << m_nodeId);NS_LOG_LOGIC("releasing contiki after timer request " << m_nodeId);
+			NS_LOG_LOGIC("contiki's timer handled " << m_nodeId);
+			NS_LOG_LOGIC("releasing contiki after timer request " << m_nodeId);
 
 			if (timertype != 0 && timertype != 1)
 				NS_FATAL_ERROR("wrong timertype " << timertype);
@@ -562,98 +359,6 @@ void IpcReader::Run(void) {
 	}
 }
 
-//// This runs in a separate thread
-//void IpcReader::Run(void) {
-//	for (;;) {
-//		if (m_stop) {
-//			// this thread is done
-//			break;
-//		}
-//
-//		/////////////////////////////////////////////////////////
-//		// Checking if contiki requested to schedule a timer
-//		uint64_t timerval = 0;
-//		uint8_t timertype = 0;
-//
-//		int rtval;
-//		sem_getvalue(&sharedSemaphores->sem_timer_done, &rtval);
-//		if (rtval == 1) {
-//
-//			NS_LOG_LOGIC("contiki requested a timer\n" << m_nodeId);
-//
-//			std::cout
-//					<< " ---Wait ipcReader  sharedSemaphores->sem_timer Run at "
-//					<< m_nodeId << " \n";
-////			if (sem_wait(&sharedSemaphores->sem_timer) == -1)
-////				NS_FATAL_ERROR("sem_wait(): error" << strerror(errno));
-////			std::cout
-////					<< " ---Wait ipcReader  sharedSemaphores->sem_timer Run at "
-////					<< m_nodeId << " \n";
-//
-//			memcpy(&timertype, sharedSemaphores->traffic_timer, 1);
-//			memcpy(&timerval, sharedSemaphores->traffic_timer + 1, 8);
-//
-//			memset(sharedSemaphores->traffic_timer, 0, 9);
-//
-//			NS_LOG_LOGIC("contiki's timer handled " << m_nodeId);
-//
-//			if (timertype != 0 && timertype != 1)
-//				NS_FATAL_ERROR("wrong timertype " << timertype);
-//
-//			if (timerval > 0) {
-//				SetTimer(timerval, timertype);
-//			}
-//
-//			NS_LOG_LOGIC("releasing contiki after timer request " << m_nodeId);
-//
-//			std::cout
-//					<< " ---Wait ipcReader  sharedSemaphores->sem_timer_done Run at "
-//					<< m_nodeId << " Timer Value: " << timerval <<" \n";
-//
-//			sem_wait(&sharedSemaphores->sem_timer_done);
-//			std::cout
-//					<< " ---Wait ipcReader  sharedSemaphores->sem_timer_done Run at "
-//					<< m_nodeId << " \n";
-//			std::cout
-//					<< " ---Post ipcReader  sharedSemaphores->sem_timer_go Run at "
-//					<< m_nodeId << " \n";
-//			sem_post(&sharedSemaphores->sem_timer_go);
-//			std::cout
-//					<< " ---Post ipcReader  sharedSemaphores->sem_timer_go Run at "
-//					<< m_nodeId << " \n";
-//
-//			NS_LOG_LOGIC("contiki released after timer request" << m_nodeId);
-//
-//			std::cout
-//					<< " ---Post ipcReader  contikiNetDevice::sharedSemaphores->sem_timer Run at "
-//					<< m_nodeId << " \n";
-////			if (sem_post(&sharedSemaphores->sem_timer) == -1)
-////				NS_FATAL_ERROR("sem_post(): error" << strerror(errno));
-////			std::cout
-////					<< " ---Post ipcReader  sharedSemaphores->sem_timer Run at "
-////					<< m_nodeId << " \n";
-//		}
-//
-//		//////////////////////////////////////////////////////////
-//
-//		// Processing traffic sent by contiki
-//
-//		struct IpcReader::Data data = DoRead();
-//
-//		// reading stops when m_len is zero
-//		if (data.m_len == 0) {
-//			NS_LOG_INFO("read data of size 0");
-//			//break;
-//		}
-//		// the callback is only called when m_len is positive (data
-//		// is ignored if m_len is negative)
-//		else if (data.m_len > 0) {
-//			m_readCallback(data.m_buf, data.m_len);
-//		}
-//
-//	}
-//}
-
 void IpcReader::CheckTimer(void) {
 }
 
@@ -714,25 +419,6 @@ std::list<uint32_t> IpcReader::getReleaseSchedule(Time time) {
 
 	CriticalSection cs(m_controlNodesToWakeUp);
 	std::list < uint32_t > returnValue;
-
-// Specific value, remove later when we are sure the smaller is better
-//	std::list < Time > removeValues;
-//
-//	// searches for the time, if found some one updates the
-//	// return value with the set of nodes to wake up and erase it from the list
-//	// since the time for them has arrived
-//	if (nodesToWakeUp.find(time) != nodesToWakeUp.end()) {
-//		returnValue = nodesToWakeUp[time];
-//		nodesToWakeUp.erase(time);
-//	}
-
-//  to test: REMOVE
-//	Time tmptime = Time::From (1, Time::NS);
-//	std::list < uint32_t > scheduledNodes;
-//	scheduledNodes.push_back(1);
-//	scheduledNodes.push_back(37);
-//	nodesToWakeUp.insert(
-//					std::pair<Time, std::list<uint32_t> >(tmptime, scheduledNodes));
 
 	std::map<Time, std::list<uint32_t> >::iterator it;
 
