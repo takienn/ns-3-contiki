@@ -20,8 +20,6 @@ NS_LOG_COMPONENT_DEFINE("ContikiNetDevice");
 namespace ns3 {
 //Values for Semaphores
 
-//sem_t* ContikiNetDevice::m_sem_time = NULL;
-
 uint32_t ContikiNetDevice::m_nNodes;
 
 /**
@@ -120,8 +118,6 @@ void ContikiNetDevice::StartContikiDevice(void) {
 
 	NS_LOG_LOGIC ("Creating IPC Shared Memory");
 
-//	CreateIpc();
-
 	//
 	// Spin up the Contiki Device and start receiving packets.
 	//
@@ -142,26 +138,7 @@ void ContikiNetDevice::StartContikiDevice(void) {
 	else if (child) { /*  This is the parent. */
 		NS_LOG_DEBUG ("Parent process"); NS_LOG_LOGIC("Child PID: " << child);
 
-//		memset(sharedSemaphores->traffic_in, 5, 10);
-//
-
-		//Ordering contiki to continue, now that all preparations are ready.
-//
-//		int status;
-//		waitpid(child, &status, WUNTRACED);
-//		if(WIFSTOPPED(status))
-//			kill(child, SIGCONT);
-
 	} else {
-
-		//For the sake of respect, contiki won't continue
-		//untill ordered to do so, ns-3 might still need
-		//to prepare some stuff.
-		//printf("Stopping child %d\n", getpid());
-//		if (kill(getpid(), SIGSTOP) == -1)
-//			perror("kill(sigstop) failed ");764 nodeId 1
-
-		//Running Contiki
 
 		Ptr<NetDevice> nd = GetBridgedNetDevice();
 		Ptr<Node> n = nd->GetNode();
@@ -204,31 +181,6 @@ void ContikiNetDevice::StartContikiDevice(void) {
 		std::ostringstream nodeAddr;
 		nodeAddr << mac64Address;
 
-//		/* shared memory segment id           */
-//		int shMemSegID;
-//
-//		/* ptr to shared memory segment       */
-//		void *shMemSeg;
-
-//		 shMemSegID = shmget((key_t)(1095 + m_nodeId),sizeof(sem_t),SHM_R|SHM_W);
-//		 shMemSeg = shmat(shMemSegID,0,0);
-//		 m_sem_go = (sem_t*)shMemSeg;
-
-//		sharedSemaphores.sem_go=m_sem_go;
-//		sharedSemaphores.sem_done=&m_sem_done;
-
-//	    std::cout << " --- *#*#*#*# Post listOfGoSemaphores[m_nodeId] "<< listOfGoSemaphores[m_nodeId] << "  " << m_nodeId <<" \n";// << GetNodeId()
-//	    if (sem_post(listOfGoSemaphores[m_nodeId]) == -1)
-//////	    	if (sem_post(sharedSemaphores.sem_go) == -1)
-//			NS_FATAL_ERROR("sem_post() failed: " << strerror(errno) << "\n");
-//	    std::cout << " --- *#*#*#*# Post Device  sharedSemaphores.sem_go StartContikiDevice at "<< " \n";// << GetNodeId()
-
-
-//		int value;
-//		sem_getvalue(&sharedSemaphores->sem_go, &value);
-//		char buf[256];
-//		memcpy(buf, sharedSemaphores->traffic_in, 10);
-
 		ContikiMain(c_nodeId, 0, nodeAddr.str().c_str(), app, sharedSemaphores);
 
 	}
@@ -237,9 +189,6 @@ void ContikiNetDevice::StartContikiDevice(void) {
 uint64_t now =0;
 void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 		uint64_t newValue) {
-
-//	int rtval; // to probe sem_done value
-//	uint32_t N = GetNNodes(); // Number of nodes
 
 	// This is because  Contiki's time granularity is Miliseconds and for ns-3
 	// it is in nanoseconds
@@ -277,8 +226,6 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	// Sinchronization mechanism:
 	// posts a sem go for each contiki node that has things to do now (post sem_go)
 	// waits for each one of these nodes to finnish their quantum of time (waits sem_done)
-
-//	IpcReader t_ipcReader;
 	std::list < uint32_t > listToWake = IpcReader::getReleaseSchedule(
 			NanoSeconds(newValue));
 
@@ -325,28 +272,6 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 				<< *it << " \n"; // << GetNodeId() << m_nodeId<< " \n";
 	}
 
-//	if (sem_getvalue(&m_sem_done, &rtval) == -1)
-//		perror("sem_getvalue(m_sem_done) error");
-//	while ((uint32_t) (rtval) < N) {struct
-//		//NS_LOG_LOGIC("contikis not ready yet: " << rtval);
-//		sem_getvalue(&m_sem_done, &rtval);
-//	}
-//	NS_LOG_LOGIC("ns-3 got contikis");
-//	fflush(stdout);
-//	///////////////////////////////////////////////////////
-//
-//	///// Resetting the semaphores ///////
-//	for (uint32_t i = 0; i < N; i++) {
-//		sem_wait(&m_sem_done);
-//	}
-//
-//	// Releasing Contiki Nodes
-//	NS_LOG_LOGIC("Releasing All Contiki Processes\n");
-//	for(uint32_t i = 0; i< N; i++){
-//		sem_post(&m_sem_go);
-//		NS_LOG_LOGIC("Releasing Contiki Processe " << i << "\n");
-//	}
-//	NS_LOG_LOGIC("Released All Contiki Processes\n");
 	//////////////////////////////////////
 
 	//XXX This trick is to force ns-3 to go in slow motion so that
@@ -370,31 +295,6 @@ void ContikiNetDevice::StopContikiDevice(void) {
 		m_ipcReader = 0;
 	}
 
-//	//unmapping mapped memory addresses and closing semaphore variables
-//
-//	if (m_traffic_in != NULL) {
-//		if (munmap(m_traffic_in, m_traffic_size + sizeof(size_t)) == -1)
-//			NS_FATAL_ERROR("munmap() failed: " << strerror(errno));
-//
-//		m_traffic_in = NULL;
-//	}
-//
-//	if (m_traffic_out != NULL) {
-//		if (munmap(m_traffic_out, m_traffic_size + sizeof(size_t)) == -1)
-//			NS_FATAL_ERROR("munmap() failed: " << strerror(errno));
-//
-//		m_traffic_out = NULL;
-//	}
-//
-//	// Well, time memory is unique for all nodes it might just been
-//	// unmapped by another node, no need to do it again.
-//	if (m_traffic_time != NULL) {
-//		if (munmap(m_traffic_time, m_time_size) == -1)
-//			NS_FATAL_ERROR("munmap() failed: " << strerror(errno));
-//
-//		m_traffic_time = NULL;
-//	}
-
 	NS_LOG_LOGIC("Killing Child");
 	kill(child, SIGKILL);
 
@@ -403,97 +303,6 @@ void ContikiNetDevice::StopContikiDevice(void) {
 //	ClearIpc();
 }
 
-//void ContikiNetDevice::CreateIpc(void) {
-//	NS_LOG_FUNCTION_NOARGS ();
-//
-//
-//	/* Shared Memory*/
-//
-//	// Preparing shm/sem names
-//	m_shm_in_name << "/ns_contiki_traffic_in_" << m_nodeId;
-//	m_shm_out_name << "/ns_contiki_traffic_out_" << m_nodeId;
-//	m_shm_timer_name << "/ns_contiki_traffic_timer_" << m_nodeId;
-//	m_shm_time_name << "/ns_contiki_traffic_time_";// << m_nodeId;
-//
-//	//Assuring there are no shm/sem leftovers from previous executions
-//	//ClearIpc();
-//
-//	//Now Assuring the creation of ALL shm/sem objects but traffic_in and traffic_timer
-//	// are left for the read thread (where they are used) to map.
-//	if ((m_shm_in = shm_open(m_shm_in_name.str().c_str(),
-//			O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
-//			== -1)
-//		NS_FATAL_ERROR("shm_open(m_shm_in) " << strerror(errno));
-//
-//	if ((m_shm_out = shm_open(m_shm_out_name.str().c_str(),
-//			O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))
-//			== -1)
-//		NS_FATAL_ERROR("shm_open(m_shm_out)" << strerror(errno));
-//
-//	if ((m_shm_timer = shm_open(m_shm_timer_name.str().c_str(),
-//			O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-//		NS_FATAL_ERROR("shm_open()" << strerror(errno));
-//
-//	if ((m_shm_time = shm_open(m_shm_time_name.str().c_str(), O_RDWR | O_CREAT,
-//			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) == -1)
-//		NS_FATAL_ERROR("shm_open(m_shm_time) " << strerror(errno));
-//
-//	if (ftruncate(m_shm_in, m_traffic_size + sizeof(size_t)) == -1)
-//		NS_FATAL_ERROR("ftruncate(m_shm_in) " << strerror(errno));
-//
-//	if (ftruncate(m_shm_out, m_traffic_size + sizeof(size_t)) == -1)
-//		NS_FATAL_ERROR("shm_open(m_shm_out) " << strerror(errno));
-//
-//	if (ftruncate(m_shm_time, m_time_size) == -1)
-//		NS_FATAL_ERROR("ftruncate(m_shm_time)" << strerror(errno));
-//
-//	if (ftruncate(m_shm_timer, m_time_size + 1) == -1)
-//		NS_FATAL_ERROR("ftruncate(m_shm_timer)" << strerror(errno));
-//
-//	/* XXX A note here: not just data is trafered but also data size
-//	 * it is saved in sizeof(size_t) memory.
-//	 */
-//
-//	m_traffic_out = (uint8_t *) mmap(NULL,
-//			sizeof(size_t) + m_traffic_size + sizeof(size_t),
-//			PROT_READ | PROT_WRITE, MAP_SHARED, m_shm_out, 0);
-//
-//	if (m_traffic_time == NULL)
-//		m_traffic_time = (uint8_t *) mmap(NULL, m_time_size, PROT_READ | PROT_WRITE,
-//				MAP_SHARED, m_shm_time, 0);
-//
-//
-////	if ((m_sem_time = sem_open(m_sem_time_name.str().c_str(), O_CREAT,
-////			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, 1)) == SEM_FAILED )
-////		NS_FATAL_ERROR("ns -3 sem_open(sem_time) failed: " << strerror(errno));
-//
-//
-//}
-
-//void ContikiNetDevice::ClearIpc() {
-//
-//	munmap(m_traffic_in, sizeof(size_t) + m_traffic_size);
-//	munmap(m_traffic_out, sizeof(size_t) + m_traffic_size);
-//	munmap(m_traffic_time, m_time_size);
-//
-//	shm_unlink(m_shm_in_name.str().c_str());
-//	shm_unlink(m_shm_out_name.str().c_str());
-//	shm_unlink(m_shm_time_name.str().c_str());
-//	shm_unlink(m_shm_timer_name.str().c_str());
-//
-//	sem_destroy(sharedSemaphores->sem_in);
-//	sem_destroy(sharedSemaphores->sem_out);
-//	sem_destroy(sharedSemaphores->sem_time);
-//	sem_destroy(sharedSemaphores->sem_timer);
-//	sem_destroy(sharedSemaphores->sem_go);
-//	sem_destroy(sharedSemaphores->sem_done);
-//	sem_destroy(sharedSemaphores->sem_timer_go);
-//	sem_destroy(sharedSemaphores->sem_timer_done);
-//	sem_destroy(sharedSemaphores->sem_traffic_go);
-//	sem_destroy(sharedSemaphores->sem_traffic_done);
-//
-//	NS_LOG_LOGIC("Cleared semaphores and Shared memories\n");
-//}
 
 void ContikiNetDevice::ReadCallback(uint8_t *buf, ssize_t len) {
 	NS_LOG_FUNCTION_NOARGS ();
@@ -629,14 +438,12 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 
 	NS_LOG_LOGIC("NS-3 is writing for node " << child << "\n");
 
-	std::cout
-			<< " ---Wait Device  sharedSemaphores->sem_out ReceiveFromBridgedDevice at "
-			<< m_nodeId << " \n";
+	NS_LOG_LOGIC( " ---Wait Device  sharedSemaphores->sem_out ReceiveFromBridgedDevice at "
+			<< m_nodeId << " \n");
 	if (sem_wait(&sharedSemaphores->sem_out) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
-	std::cout
-			<< " ---Wait Device  sharedSemaphores->sem_out ReceiveFromBridgedDevice at "
-			<< m_nodeId << " \n";
+	NS_LOG_LOGIC(" ---Wait Device  sharedSemaphores->sem_out ReceiveFromBridgedDevice at "
+			<< m_nodeId << " \n");
 
 	//TODO: Maybe check if p->GetSize() doesn't exceed m_traffic_size
 
@@ -645,6 +452,7 @@ bool ContikiNetDevice::ReceiveFromBridgedDevice(Ptr<NetDevice> device,
 	size_t output_size = (size_t) p->GetSize();
 	//writing traffic size first
 	memcpy(sharedSemaphores->traffic_out, &output_size, sizeof(size_t));
+	NS_LOG_LOGIC(" Send msg to contiki size:  " << output_size << "\n");
 
 	//Now writing actual traffic
 	void *retval = memcpy(sharedSemaphores->traffic_out + sizeof(size_t), m_packetBuffer,
