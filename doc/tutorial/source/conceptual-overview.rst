@@ -1,5 +1,5 @@
 .. include:: replace.txt
-
+.. highlight:: cpp
 
 Conceptual Overview
 -------------------
@@ -153,7 +153,7 @@ of |ns3| in a directory called ``repos`` under your home
 directory.  Change into that release directory, and you should find a 
 directory structure something like the following:
 
-::
+.. sourcecode:: bash
 
   AUTHORS       examples       scratch        utils      waf.bat*
   bindings      LICENSE        src            utils.py   waf-tools
@@ -250,16 +250,16 @@ load all of the public header files.
 Since you are, of course, following this tutorial religiously, you will 
 already have done a
 
-::
+.. sourcecode:: bash
 
-  ./waf -d debug --enable-examples --enable-tests configure
+  $ ./waf -d debug --enable-examples --enable-tests configure
 
 in order to configure the project to perform debug builds that include 
 examples and tests.  You will also have done a
 
-::
+.. sourcecode:: bash
 
-  ./waf
+  $ ./waf
 
 to build the project.  So now if you look in the directory 
 ``../../build/debug/ns3`` you will find the four module include files shown 
@@ -339,6 +339,21 @@ This is just the declaration of the main function of your program (script).
 Just as in any C++ program, you need to define a main function that will be 
 the first function run.  There is nothing at all special here.  Your 
 |ns3| script is just a C++ program.
+
+The next line sets the time resolution to one nanosecond, which happens
+to be the default value:
+
+::
+
+    Time::SetResolution (Time::NS);
+
+The resolution is the smallest time value that can be represented (as well as
+the smallest representable difference between two time values).
+You can change the resolution exactly once.  The mechanism enabling this
+flexibility is somewhat memory hungry, so once the resolution has been
+set explicitly we release the memory, preventing further updates.   (If
+you don't set the resolution explicitly, it will default to one nanosecond,
+and the memory will be released when the simulation starts.)
 
 The next two lines of the script are used to enable two logging components that
 are built into the Echo Client and Echo Server applications:
@@ -735,21 +750,21 @@ to drop your script into the scratch directory and it will automatically be
 built if you run Waf.  Let's try it.  Copy ``examples/tutorial/first.cc`` into 
 the ``scratch`` directory after changing back into the top level directory.
 
-::
+.. sourcecode:: bash
 
-  cd ../..
-  cp examples/tutorial/first.cc scratch/myfirst.cc
+  $ cd ../..
+  $ cp examples/tutorial/first.cc scratch/myfirst.cc
 
 Now build your first example script using waf:
 
-::
+.. sourcecode:: bash
 
-  ./waf
+  $ ./waf
 
 You should see messages reporting that your ``myfirst`` example was built
 successfully.
 
-::
+.. sourcecode:: bash
 
   Waf: Entering directory `/home/craigdo/repos/ns-3-allinone/ns-3-dev/build'
   [614/708] cxx: scratch/myfirst.cc -> build/debug/scratch/myfirst_3.o
@@ -760,13 +775,13 @@ successfully.
 You can now run the example (note that if you build your program in the scratch
 directory you must run it out of the scratch directory):
 
-::
+.. sourcecode:: bash
 
-  ./waf --run scratch/myfirst
+  $ ./waf --run scratch/myfirst
 
 You should see some output:
 
-::
+.. sourcecode:: bash
 
   Waf: Entering directory `/home/craigdo/repos/ns-3-allinone/ns-3-dev/build'
   Waf: Leaving directory `/home/craigdo/repos/ns-3-allinone/ns-3-dev/build'
@@ -794,14 +809,14 @@ summary page for our |ns3| development tree.
 
 At the top of the page, you will see a number of links,
 
-::
+.. sourcecode:: text
 
   summary | shortlog | changelog | graph | tags | files 
 
 Go ahead and select the ``files`` link.  This is what the top-level of
 most of our *repositories* will look:
 
-::
+.. sourcecode:: text
 
   drwxr-xr-x                               [up]     
   drwxr-xr-x                               bindings python  files

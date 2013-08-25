@@ -946,7 +946,7 @@ uint8_t DsrOptionRreq::Process (Ptr<Packet> packet, Ptr<Packet> dsrP, Ipv4Addres
           return rreq.GetSerializedSize ();
         }
     }
-  return rreq.GetSerializedSize ();
+  //unreachable:  return rreq.GetSerializedSize ();
 }
 
 NS_OBJECT_ENSURE_REGISTERED (DsrOptionRrep);
@@ -1481,7 +1481,7 @@ uint8_t DsrOptionRerr::Process (Ptr<Packet> packet, Ptr<Packet> dsrP, Ipv4Addres
       p->RemoveHeader (rerrUnsupport);
       rerrSize = rerrUnsupport.GetSerializedSize ();
 
-      // This is for the other two error options, not supporting for now TODO
+      /// \todo This is for the other two error options, not supporting for now
 //      uint32_t serialized = DoSendError (p, rerrUnsupport, rerrSize, ipv4Address, protocol);
       uint32_t serialized = 0;
       return serialized;

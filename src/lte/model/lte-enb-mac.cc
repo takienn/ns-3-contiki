@@ -541,7 +541,7 @@ LteEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo)
 
   // --- UPLINK ---
   // Send UL-CQI info to the scheduler
-  std::vector <FfMacSchedSapProvider::SchedUlCqiInfoReqParameters>::iterator itCqi; 
+  std::vector <FfMacSchedSapProvider::SchedUlCqiInfoReqParameters>::iterator itCqi;
   for (uint16_t i = 0; i < m_ulCqiReceived.size (); i++)
     {
       if (subframeNo>1)
@@ -635,6 +635,10 @@ LteEnbMac::DoUlCqiReport (FfMacSchedSapProvider::SchedUlCqiInfoReqParameters ulc
   if (ulcqi.m_ulCqi.m_type == UlCqi_s::PUSCH)
     {
       NS_LOG_DEBUG (this << " eNB rxed an PUSCH UL-CQI");
+    }
+  else if (ulcqi.m_ulCqi.m_type == UlCqi_s::SRS)
+    {
+      NS_LOG_DEBUG (this << " eNB rxed an SRS UL-CQI");
     }
   m_ulCqiReceived.push_back (ulcqi);
 }
@@ -1042,7 +1046,15 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
   Ptr<RarLteControlMessage> rarMsg = Create<RarLteControlMessage> ();
   // see TS 36.321 5.1.4;  preambles were sent two frames ago
   // (plus 3GPP counts subframes from 0, not 1)
-  uint16_t raRnti = m_subframeNo - 3;
+  uint16_t raRnti;
+  if (m_subframeNo < 3)
+    {
+      raRnti = m_subframeNo + 7; // equivalent to +10-3
+    }
+  else
+    {
+      raRnti = m_subframeNo - 3;
+    }
   rarMsg->SetRaRnti (raRnti);
   for (unsigned int i = 0; i < ind.m_buildRarList.size (); i++)
     {

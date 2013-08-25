@@ -67,7 +67,7 @@ void
 CtrlBAckRequestHeader::Print (std::ostream &os) const
 {
   NS_LOG_FUNCTION (this << &os);
-  os << "TID_INFO=" << m_tidInfo << ", StartingSeq=" << std::hex << m_startingSeq;
+  os << "TID_INFO=" << m_tidInfo << ", StartingSeq=" << std::hex << m_startingSeq << std::dec;
 }
 
 uint32_t
@@ -314,7 +314,7 @@ void
 CtrlBAckResponseHeader::Print (std::ostream &os) const
 {
   NS_LOG_FUNCTION (this << &os);
-  os << "TID_INFO=" << m_tidInfo << ", StartingSeq=" << std::hex << m_startingSeq;
+  os << "TID_INFO=" << m_tidInfo << ", StartingSeq=" << std::hex << m_startingSeq << std::dec;
 }
 
 uint32_t

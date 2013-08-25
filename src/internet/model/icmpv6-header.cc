@@ -1470,7 +1470,7 @@ TypeId Icmpv6OptionHeader::GetInstanceTypeId () const
 Icmpv6OptionHeader::Icmpv6OptionHeader ()
 {
   NS_LOG_FUNCTION (this);
-  /* TODO */
+  /** \todo */
   m_type = 0;
   m_len = 0;
 }
@@ -1895,6 +1895,7 @@ uint32_t Icmpv6OptionLinkLayerAddress::Deserialize (Buffer::Iterator start)
 
   SetType (i.ReadU8 ());
   SetLength (i.ReadU8 ());
+  NS_ASSERT (GetLength () * 8 - 2 <= 32);
   i.Read (mac, (GetLength () * 8) - 2);
 
   m_addr.CopyFrom (mac, (GetLength () * 8)-2);
