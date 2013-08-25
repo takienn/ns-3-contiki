@@ -132,6 +132,8 @@ def register_types(module):
     module.add_class('PacketTagList', import_from_module='ns.network')
     ## packet-tag-list.h (module 'network'): ns3::PacketTagList::TagData [struct]
     module.add_class('TagData', import_from_module='ns.network', outer_class=root_module['ns3::PacketTagList'])
+    ## packet-tag-list.h (module 'network'): ns3::PacketTagList::TagData::TagData_e [enumeration]
+    module.add_enum('TagData_e', ['MAX_SIZE'], outer_class=root_module['ns3::PacketTagList::TagData'], import_from_module='ns.network')
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::Object, ns3::ObjectBase, ns3::ObjectDeleter> [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::Object', 'ns3::ObjectBase', 'ns3::ObjectDeleter'], parent=root_module['ns3::ObjectBase'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simulator.h (module 'core'): ns3::Simulator [class]
@@ -190,8 +192,6 @@ def register_types(module):
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::EventImpl', 'ns3::empty', 'ns3::DefaultDeleter<ns3::EventImpl>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::FlowClassifier, ns3::empty, ns3::DefaultDeleter<ns3::FlowClassifier> > [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, template_parameters=['ns3::FlowClassifier', 'ns3::empty', 'ns3::DefaultDeleter<ns3::FlowClassifier>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> > [class]
-    module.add_class('SimpleRefCount', automatic_type_narrowing=True, template_parameters=['ns3::FlowProbe', 'ns3::empty', 'ns3::DefaultDeleter<ns3::FlowProbe>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::Ipv4MulticastRoute, ns3::empty, ns3::DefaultDeleter<ns3::Ipv4MulticastRoute> > [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::Ipv4MulticastRoute', 'ns3::empty', 'ns3::DefaultDeleter<ns3::Ipv4MulticastRoute>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::Ipv4Route, ns3::empty, ns3::DefaultDeleter<ns3::Ipv4Route> > [class]
@@ -255,7 +255,7 @@ def register_types(module):
     ## flow-monitor.h (module 'flow-monitor'): ns3::FlowMonitor::FlowStats [struct]
     module.add_class('FlowStats', outer_class=root_module['ns3::FlowMonitor'])
     ## flow-probe.h (module 'flow-monitor'): ns3::FlowProbe [class]
-    module.add_class('FlowProbe', parent=root_module['ns3::SimpleRefCount< ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> >'])
+    module.add_class('FlowProbe', parent=root_module['ns3::Object'])
     ## flow-probe.h (module 'flow-monitor'): ns3::FlowProbe::FlowStats [struct]
     module.add_class('FlowStats', outer_class=root_module['ns3::FlowProbe'])
     ## ip-l4-protocol.h (module 'internet'): ns3::IpL4Protocol [class]
@@ -316,8 +316,6 @@ def register_types(module):
     module.add_class('OutputStreamWrapper', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::OutputStreamWrapper, ns3::empty, ns3::DefaultDeleter<ns3::OutputStreamWrapper> >'])
     ## packet.h (module 'network'): ns3::Packet [class]
     module.add_class('Packet', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::Packet, ns3::empty, ns3::DefaultDeleter<ns3::Packet> >'])
-    ## nstime.h (module 'core'): ns3::TimeChecker [class]
-    module.add_class('TimeChecker', import_from_module='ns.core', parent=root_module['ns3::AttributeChecker'])
     ## nstime.h (module 'core'): ns3::TimeValue [class]
     module.add_class('TimeValue', import_from_module='ns.core', parent=root_module['ns3::AttributeValue'])
     ## type-id.h (module 'core'): ns3::TypeIdChecker [class]
@@ -415,7 +413,6 @@ def register_methods(root_module):
     register_Ns3SimpleRefCount__Ns3CallbackImplBase_Ns3Empty_Ns3DefaultDeleter__lt__ns3CallbackImplBase__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::CallbackImplBase, ns3::empty, ns3::DefaultDeleter<ns3::CallbackImplBase> >'])
     register_Ns3SimpleRefCount__Ns3EventImpl_Ns3Empty_Ns3DefaultDeleter__lt__ns3EventImpl__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::EventImpl, ns3::empty, ns3::DefaultDeleter<ns3::EventImpl> >'])
     register_Ns3SimpleRefCount__Ns3FlowClassifier_Ns3Empty_Ns3DefaultDeleter__lt__ns3FlowClassifier__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::FlowClassifier, ns3::empty, ns3::DefaultDeleter<ns3::FlowClassifier> >'])
-    register_Ns3SimpleRefCount__Ns3FlowProbe_Ns3Empty_Ns3DefaultDeleter__lt__ns3FlowProbe__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> >'])
     register_Ns3SimpleRefCount__Ns3Ipv4MulticastRoute_Ns3Empty_Ns3DefaultDeleter__lt__ns3Ipv4MulticastRoute__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::Ipv4MulticastRoute, ns3::empty, ns3::DefaultDeleter<ns3::Ipv4MulticastRoute> >'])
     register_Ns3SimpleRefCount__Ns3Ipv4Route_Ns3Empty_Ns3DefaultDeleter__lt__ns3Ipv4Route__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::Ipv4Route, ns3::empty, ns3::DefaultDeleter<ns3::Ipv4Route> >'])
     register_Ns3SimpleRefCount__Ns3NixVector_Ns3Empty_Ns3DefaultDeleter__lt__ns3NixVector__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::NixVector, ns3::empty, ns3::DefaultDeleter<ns3::NixVector> >'])
@@ -470,7 +467,6 @@ def register_methods(root_module):
     register_Ns3ObjectFactoryValue_methods(root_module, root_module['ns3::ObjectFactoryValue'])
     register_Ns3OutputStreamWrapper_methods(root_module, root_module['ns3::OutputStreamWrapper'])
     register_Ns3Packet_methods(root_module, root_module['ns3::Packet'])
-    register_Ns3TimeChecker_methods(root_module, root_module['ns3::TimeChecker'])
     register_Ns3TimeValue_methods(root_module, root_module['ns3::TimeValue'])
     register_Ns3TypeIdChecker_methods(root_module, root_module['ns3::TypeIdChecker'])
     register_Ns3TypeIdValue_methods(root_module, root_module['ns3::TypeIdValue'])
@@ -2072,6 +2068,10 @@ def register_Ns3PacketTagList_methods(root_module, cls):
     cls.add_method('RemoveAll', 
                    'void', 
                    [])
+    ## packet-tag-list.h (module 'network'): bool ns3::PacketTagList::Replace(ns3::Tag & tag) [member function]
+    cls.add_method('Replace', 
+                   'bool', 
+                   [param('ns3::Tag &', 'tag')])
     return
 
 def register_Ns3PacketTagListTagData_methods(root_module, cls):
@@ -3113,18 +3113,6 @@ def register_Ns3SimpleRefCount__Ns3FlowClassifier_Ns3Empty_Ns3DefaultDeleter__lt
                    is_static=True)
     return
 
-def register_Ns3SimpleRefCount__Ns3FlowProbe_Ns3Empty_Ns3DefaultDeleter__lt__ns3FlowProbe__gt___methods(root_module, cls):
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> >::SimpleRefCount() [constructor]
-    cls.add_constructor([])
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> >::SimpleRefCount(ns3::SimpleRefCount<ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> > const & o) [copy constructor]
-    cls.add_constructor([param('ns3::SimpleRefCount< ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter< ns3::FlowProbe > > const &', 'o')])
-    ## simple-ref-count.h (module 'core'): static void ns3::SimpleRefCount<ns3::FlowProbe, ns3::empty, ns3::DefaultDeleter<ns3::FlowProbe> >::Cleanup() [member function]
-    cls.add_method('Cleanup', 
-                   'void', 
-                   [], 
-                   is_static=True)
-    return
-
 def register_Ns3SimpleRefCount__Ns3Ipv4MulticastRoute_Ns3Empty_Ns3DefaultDeleter__lt__ns3Ipv4MulticastRoute__gt___methods(root_module, cls):
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::Ipv4MulticastRoute, ns3::empty, ns3::DefaultDeleter<ns3::Ipv4MulticastRoute> >::SimpleRefCount() [constructor]
     cls.add_constructor([])
@@ -3942,6 +3930,16 @@ def register_Ns3Time_methods(root_module, cls):
                    'bool', 
                    [], 
                    is_const=True)
+    ## nstime.h (module 'core'): static ns3::Time ns3::Time::MAX() [member function]
+    cls.add_method('MAX', 
+                   'ns3::Time', 
+                   [], 
+                   is_static=True)
+    ## nstime.h (module 'core'): static ns3::Time ns3::Time::MIN() [member function]
+    cls.add_method('MIN', 
+                   'ns3::Time', 
+                   [], 
+                   is_static=True)
     ## nstime.h (module 'core'): static void ns3::Time::SetResolution(ns3::Time::Unit resolution) [member function]
     cls.add_method('SetResolution', 
                    'void', 
@@ -4308,6 +4306,11 @@ def register_Ns3FlowMonitor_methods(root_module, cls):
     cls.add_method('StopRightNow', 
                    'void', 
                    [])
+    ## flow-monitor.h (module 'flow-monitor'): void ns3::FlowMonitor::DoDispose() [member function]
+    cls.add_method('DoDispose', 
+                   'void', 
+                   [], 
+                   visibility='protected', is_virtual=True)
     ## flow-monitor.h (module 'flow-monitor'): void ns3::FlowMonitor::NotifyConstructionCompleted() [member function]
     cls.add_method('NotifyConstructionCompleted', 
                    'void', 
@@ -4382,6 +4385,11 @@ def register_Ns3FlowProbe_methods(root_module, cls):
     ## flow-probe.h (module 'flow-monitor'): ns3::FlowProbe::FlowProbe(ns3::Ptr<ns3::FlowMonitor> flowMonitor) [constructor]
     cls.add_constructor([param('ns3::Ptr< ns3::FlowMonitor >', 'flowMonitor')], 
                         visibility='protected')
+    ## flow-probe.h (module 'flow-monitor'): void ns3::FlowProbe::DoDispose() [member function]
+    cls.add_method('DoDispose', 
+                   'void', 
+                   [], 
+                   visibility='protected', is_virtual=True)
     return
 
 def register_Ns3FlowProbeFlowStats_methods(root_module, cls):
@@ -4713,6 +4721,11 @@ def register_Ns3Ipv4FlowClassifierFiveTuple_methods(root_module, cls):
 def register_Ns3Ipv4FlowProbe_methods(root_module, cls):
     ## ipv4-flow-probe.h (module 'flow-monitor'): ns3::Ipv4FlowProbe::Ipv4FlowProbe(ns3::Ptr<ns3::FlowMonitor> monitor, ns3::Ptr<ns3::Ipv4FlowClassifier> classifier, ns3::Ptr<ns3::Node> node) [constructor]
     cls.add_constructor([param('ns3::Ptr< ns3::FlowMonitor >', 'monitor'), param('ns3::Ptr< ns3::Ipv4FlowClassifier >', 'classifier'), param('ns3::Ptr< ns3::Node >', 'node')])
+    ## ipv4-flow-probe.h (module 'flow-monitor'): void ns3::Ipv4FlowProbe::DoDispose() [member function]
+    cls.add_method('DoDispose', 
+                   'void', 
+                   [], 
+                   visibility='protected', is_virtual=True)
     return
 
 def register_Ns3Ipv4L3Protocol_methods(root_module, cls):
@@ -5809,6 +5822,10 @@ def register_Ns3Packet_methods(root_module, cls):
     cls.add_method('RemoveTrailer', 
                    'uint32_t', 
                    [param('ns3::Trailer &', 'trailer')])
+    ## packet.h (module 'network'): bool ns3::Packet::ReplacePacketTag(ns3::Tag & tag) [member function]
+    cls.add_method('ReplacePacketTag', 
+                   'bool', 
+                   [param('ns3::Tag &', 'tag')])
     ## packet.h (module 'network'): uint32_t ns3::Packet::Serialize(uint8_t * buffer, uint32_t maxSize) const [member function]
     cls.add_method('Serialize', 
                    'uint32_t', 
@@ -5818,13 +5835,6 @@ def register_Ns3Packet_methods(root_module, cls):
     cls.add_method('SetNixVector', 
                    'void', 
                    [param('ns3::Ptr< ns3::NixVector >', 'arg0')])
-    return
-
-def register_Ns3TimeChecker_methods(root_module, cls):
-    ## nstime.h (module 'core'): ns3::TimeChecker::TimeChecker() [constructor]
-    cls.add_constructor([])
-    ## nstime.h (module 'core'): ns3::TimeChecker::TimeChecker(ns3::TimeChecker const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::TimeChecker const &', 'arg0')])
     return
 
 def register_Ns3TimeValue_methods(root_module, cls):

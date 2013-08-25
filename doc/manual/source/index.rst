@@ -18,6 +18,7 @@ This document is written in `reStructuredText <http://docutils.sourceforge.net/r
 
    organization
    random-variables
+   hash-functions
    events
    callbacks
    object-model
@@ -25,6 +26,8 @@ This document is written in `reStructuredText <http://docutils.sourceforge.net/r
    object-names
    logging
    tracing
+   data-collection
+   statistics
    realtime
    helpers
    gnuplot

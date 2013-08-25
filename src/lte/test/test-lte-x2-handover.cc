@@ -95,7 +95,9 @@ private:
   std::vector<UeData> m_ueDataVector;
 
   const Time m_maxHoDuration; 
-  const Time m_statsDuration; 
+  const Time m_statsDuration;
+  const Time m_udpClientInterval;
+  const uint32_t m_udpClientPktSize;
 
 };
 
@@ -132,7 +134,10 @@ LteX2HandoverTestCase::LteX2HandoverTestCase (uint32_t nUes, uint32_t nDedicated
     m_admitHo (admitHo),
     m_useIdealRrc (useIdealRrc),
     m_maxHoDuration (Seconds (0.1)),
-    m_statsDuration (Seconds (0.5))
+    m_statsDuration (Seconds (0.1)),
+    m_udpClientInterval (Seconds (0.01)),
+    m_udpClientPktSize (100)
+    
 {
 }
 
@@ -142,9 +147,9 @@ LteX2HandoverTestCase::DoRun ()
   NS_LOG_FUNCTION (this << BuildNameString (m_nUes, m_nDedicatedBearers, m_handoverEventListName, m_useUdp, m_schedulerType, m_admitHo, m_useIdealRrc));
 
   Config::Reset ();
-  Config::SetDefault ("ns3::UdpClient::Interval", TimeValue (MilliSeconds(100)));
-  Config::SetDefault ("ns3::UdpClient::MaxPackets", UintegerValue(1000000));  
-  Config::SetDefault ("ns3::UdpClient::PacketSize", UintegerValue(100));  
+  Config::SetDefault ("ns3::UdpClient::Interval",  TimeValue (m_udpClientInterval));
+  Config::SetDefault ("ns3::UdpClient::MaxPackets", UintegerValue (1000000));  
+  Config::SetDefault ("ns3::UdpClient::PacketSize", UintegerValue (m_udpClientPktSize));  
 
   int64_t stream = 1;
   
@@ -234,8 +239,8 @@ LteX2HandoverTestCase::DoRun ()
    
   if (m_epc)
     {
-      bool epcDl = true;
-      bool epcUl = true;
+      // always true: bool epcDl = true;
+      // always true: bool epcUl = true;
       // the rest of this block is copied from lena-dual-stripe
 
     
@@ -271,7 +276,7 @@ LteX2HandoverTestCase::DoRun ()
 
               if (m_useUdp)
                 {              
-                  if (epcDl)
+                  // always true: if (epcDl)
                     {
                       UdpClientHelper dlClientHelper (ueIpIfaces.GetAddress (u), dlPort);
                       clientApps.Add (dlClientHelper.Install (remoteHost));
@@ -282,7 +287,7 @@ LteX2HandoverTestCase::DoRun ()
                       serverApps.Add (sinkContainer);
                       
                     }
-                  if (epcUl)
+                  // always true: if (epcUl)
                     {      
                       UdpClientHelper ulClientHelper (remoteHostAddr, ulPort);
                       clientApps.Add (ulClientHelper.Install (ue));
@@ -295,7 +300,7 @@ LteX2HandoverTestCase::DoRun ()
                 }                    
               else // use TCP
                 {
-                  if (epcDl)
+                  // always true: if (epcDl)
                     {
                       BulkSendHelper dlClientHelper ("ns3::TcpSocketFactory",
                                                      InetSocketAddress (ueIpIfaces.GetAddress (u), dlPort));
@@ -307,7 +312,7 @@ LteX2HandoverTestCase::DoRun ()
                       bearerData.dlSink = sinkContainer.Get (0)->GetObject<PacketSink> ();
                       serverApps.Add (sinkContainer);
                     }
-                  if (epcUl)
+                  // always true: if (epcUl)
                     {     
                       BulkSendHelper ulClientHelper ("ns3::TcpSocketFactory",
                                                      InetSocketAddress (remoteHostAddr, ulPort));
@@ -322,14 +327,14 @@ LteX2HandoverTestCase::DoRun ()
                 } // end if (useUdp)
 
               Ptr<EpcTft> tft = Create<EpcTft> ();
-              if (epcDl)
+              // always true: if (epcDl)
                 {
                   EpcTft::PacketFilter dlpf;
                   dlpf.localPortStart = dlPort;
                   dlpf.localPortEnd = dlPort;
                   tft->Add (dlpf); 
                 }
-              if (epcUl)
+              // always true: if (epcUl)
                 {
                   EpcTft::PacketFilter ulpf;
                   ulpf.remotePortStart = ulPort;
@@ -337,7 +342,7 @@ LteX2HandoverTestCase::DoRun ()
                   tft->Add (ulpf);
                 }
 
-              if (epcDl || epcUl)
+              // always true: if (epcDl || epcUl)
                 {
                   EpsBearer bearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT);
                   m_lteHelper->ActivateDedicatedEpsBearer (ueDevices.Get (u), bearer, tft);
@@ -405,20 +410,18 @@ LteX2HandoverTestCase::DoRun ()
                            enbDevices.Get (m_admitHo ? hoEventIt->targetEnbDeviceIndex : hoEventIt->sourceEnbDeviceIndex));
       Simulator::Schedule (hoEndTime, &LteX2HandoverTestCase::SaveStatsAfterHandover,
                            this, hoEventIt->ueDeviceIndex);
+
       Time checkStatsAfterHoTime = hoEndTime + m_statsDuration;
       Simulator::Schedule (checkStatsAfterHoTime, &LteX2HandoverTestCase::CheckStatsAWhileAfterHandover, 
                            this, hoEventIt->ueDeviceIndex);      
-      if (stopTime <= hoEndTime)
+      if (stopTime <= checkStatsAfterHoTime)
         {
-          stopTime = hoEndTime + MilliSeconds (1);
+          stopTime = checkStatsAfterHoTime + MilliSeconds (1);
         }
     }
   
-  m_lteHelper->EnableRlcTraces ();
-  Ptr<RadioBearerStatsCalculator> rlcStats = m_lteHelper->GetRlcStats ();
-  rlcStats->SetAttribute ("StartTime", TimeValue (Seconds (0.101)));
-  rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (0.1)));
-  m_lteHelper->EnablePdcpTraces();
+  // m_lteHelper->EnableRlcTraces ();
+  // m_lteHelper->EnablePdcpTraces();
 
  
   Simulator::Stop (stopTime);
@@ -517,9 +520,8 @@ LteX2HandoverTestCase::CheckStatsAWhileAfterHandover (uint32_t ueIndex)
        ++it)
     {
       uint32_t dlRx = it->dlSink->GetTotalRx () - it->dlOldTotalRx;
-      uint32_t ulRx = it->ulSink->GetTotalRx () - it->ulOldTotalRx;
-      //             udpclient pktsize interval 
-      uint32_t expectedBytes = 100.0 * (0.100 / m_statsDuration.GetSeconds ());
+      uint32_t ulRx = it->ulSink->GetTotalRx () - it->ulOldTotalRx;                       
+      uint32_t expectedBytes = m_udpClientPktSize * (m_statsDuration.GetSeconds () / m_udpClientInterval.GetSeconds ());
       //                           tolerance
       NS_TEST_ASSERT_MSG_GT (dlRx,   0.500 * expectedBytes, "too few RX bytes in DL, ue=" << ueIndex << ", b=" << b);
       NS_TEST_ASSERT_MSG_GT (ulRx,   0.500 * expectedBytes, "too few RX bytes in UL, ue=" << ueIndex << ", b=" << b);

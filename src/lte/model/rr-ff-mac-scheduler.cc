@@ -21,6 +21,7 @@
 #include <ns3/log.h>
 #include <ns3/pointer.h>
 #include <ns3/math.h>
+#include <cfloat>
 #include <set>
 
 #include <ns3/lte-amc.h>
@@ -977,7 +978,7 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
   // Divide the resource equally among the active users according to
   // Resource allocation type 0 (see sec 7.1.6.1 of 36.213)
 
-  int rbgPerTb = (rbgNum - rbgAllocatedNum) / nTbs;
+  int rbgPerTb = (nTbs > 0) ? ((rbgNum - rbgAllocatedNum) / nTbs) : DBL_MAX;
   NS_LOG_INFO (this << " Flows to be transmitted " << nflows << " rbgPerTb " << rbgPerTb);
   if (rbgPerTb == 0)
     {
@@ -1061,7 +1062,7 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
         }
       int tbSize = (m_amc->GetTbSizeFromMcs (newDci.m_mcs.at (0), rbgPerTb * rbgSize) / 8);
       uint16_t rlcPduSize = tbSize / lcNum;
-      while (lcNum > 0)
+      while ((*it).m_rnti == newEl.m_rnti)
         {
           if ( ((*it).m_rlcTransmissionQueueSize > 0)
                || ((*it).m_rlcRetransmissionQueueSize > 0)
@@ -1097,6 +1098,7 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
             {
               // restart from the first
               it = m_rlcBufferReq.begin ();
+              break;
             }
         }
       uint32_t rbgMask = 0;
@@ -1111,6 +1113,7 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
               NS_LOG_INFO ("\t " << rbgAllocated);
               i++;
               rbgMap.at (rbgAllocated) = true;
+              rbgAllocatedNum++;
             }
           rbgAllocated++;
         }
@@ -1129,7 +1132,7 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
           std::map <uint16_t, DlHarqProcessesDciBuffer_t>::iterator itDci = m_dlHarqProcessesDciBuffer.find (newEl.m_rnti);
           if (itDci == m_dlHarqProcessesDciBuffer.end ())
             {
-              NS_FATAL_ERROR ("Unable to find RNTI entry in DCI HARQ buffer for RNTI " << (*it).m_rnti);
+              NS_FATAL_ERROR ("Unable to find RNTI entry in DCI HARQ buffer for RNTI " << newEl.m_rnti);
             }
           (*itDci).second.at (newDci.m_harqProcess) = newDci;
           // refresh timer
@@ -1143,15 +1146,15 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
       // ...more parameters -> ignored in this version
 
       ret.m_buildDataList.push_back (newEl);
-      if (rbgAllocated == rbgNum)
+      if (rbgAllocatedNum == rbgNum)
         {
-          m_nextRntiDl = (*it).m_rnti; // store last RNTI served
+          m_nextRntiDl = newEl.m_rnti; // store last RNTI served
           break;                       // no more RGB to be allocated
         }
     }
   while ((*it).m_rnti != m_nextRntiDl);
 
-  ret.m_nrOfPdcchOfdmSymbols = 1;   // TODO: check correct value according the DCIs txed  
+  ret.m_nrOfPdcchOfdmSymbols = 1;   /// \todo check correct value according the DCIs txed  
 
   m_schedSapUser->SchedDlConfigInd (ret);
   return;
@@ -1215,8 +1218,7 @@ RrFfMacScheduler::DoSchedDlCqiInfoReq (const struct FfMacSchedSapProvider::Sched
 void
 RrFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::SchedUlTriggerReqParameters& params)
 {
-  NS_LOG_FUNCTION (this << " Ul - Frame no. " << (params.m_sfnSf >> 4) << " subframe no. " << (0xF & params.m_sfnSf));
-
+  NS_LOG_FUNCTION (this << " UL - Frame no. " << (params.m_sfnSf >> 4) << " subframe no. " << (0xF & params.m_sfnSf) << " size " << params.m_ulInfoList.size ());
 
   RefreshUlCqiMaps ();
 
@@ -1239,6 +1241,7 @@ RrFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sched
       if (rbgAllocationMap.at (i) != 0)
         {
           rbMap.at (i) = true;
+          NS_LOG_DEBUG (this << " Allocated for RACH " << i);
         }
     }
 
@@ -1399,6 +1402,7 @@ RrFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sched
       uldci.m_rnti = (*it).first;
       uldci.m_rbLen = rbPerFlow;
       bool allocated = false;
+      NS_LOG_INFO (this << " RB Allocated " << rbAllocated << " rbPerFlow " << rbPerFlow << " flows " << nflows);
       while ((!allocated)&&((rbAllocated + rbPerFlow - 1) < m_cschedCellConfig.m_ulBandwidth) && (rbPerFlow != 0))
         {
           // check availability
@@ -1484,7 +1488,12 @@ RrFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sched
                   // restart from the first
                   it = m_ceBsrRxed.begin ();
                 }
-              NS_LOG_INFO (this << " UE discarded for CQI = 0");
+              NS_LOG_DEBUG (this << " UE discared for CQI=0, RNTI " << uldci.m_rnti);
+              // remove UE from allocation map
+              for (uint16_t i = uldci.m_rbStart; i < uldci.m_rbStart + uldci.m_rbLen; i++)
+                {
+                  rbgAllocationMap.at (i) = 0;
+                }
               continue; // CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
             }
           uldci.m_mcs = m_amc->GetMcsFromCqi (cqi);
@@ -1835,15 +1844,28 @@ RrFfMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t s
               }
             else if ((*it).m_rlcTransmissionQueueSize > 0)
               {
+                uint32_t rlcOverhead;
+                if (lcid == 1)
+                  {
+                    // for SRB1 (using RLC AM) it's better to
+                    // overestimate RLC overhead rather than
+                    // underestimate it and risk unneeded
+                    // segmentation which increases delay 
+                    rlcOverhead = 4;                                  
+                  }
+                else
+                  {
+                    // minimum RLC overhead due to header
+                    rlcOverhead = 2;
+                  }
                 // update transmission queue
-                if ((*it).m_rlcTransmissionQueueSize <= size)
+                if ((*it).m_rlcTransmissionQueueSize <= size - rlcOverhead)
                   {
                     (*it).m_rlcTransmissionQueueSize = 0;
                   }
                 else
-                  {
-                    size -= 2; // remove minimun RLC overhead due to header
-                    (*it).m_rlcTransmissionQueueSize -= size;
+                  {                    
+                    (*it).m_rlcTransmissionQueueSize -= size - rlcOverhead;
                   }
               }
           return;

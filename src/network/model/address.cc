@@ -123,7 +123,8 @@ Address::CheckCompatible (uint8_t type, uint8_t len) const
 {
   NS_LOG_FUNCTION (this << static_cast<uint32_t> (type) << static_cast<uint32_t> (len));
   NS_ASSERT (len <= MAX_SIZE);
-  // Mac address type/length detection is discussed in bug 1568
+  /// \internal
+  /// Mac address type/length detection is discussed in \bugid{1568}
   return (m_len == len && m_type == type) || (m_len >= len && m_type == 0);
 }
 bool 
@@ -253,7 +254,7 @@ AsInt (std::string v)
   NS_LOG_FUNCTION_NOARGS ();
   std::istringstream iss;
   iss.str (v);
-  uint32_t retval;
+  uint8_t retval;
   iss >> std::hex >> retval >> std::dec;
   return retval;
 }
