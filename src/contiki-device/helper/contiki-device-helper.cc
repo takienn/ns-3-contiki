@@ -145,7 +145,8 @@ ContikiNetDeviceHelper::Install (NodeContainer nodes, Ptr<MobilityModel> pos,
   {
     bridge[i] =  m_deviceFactory.Create<ContikiNetDevice> ();
     bridge[i]->SetMode(mode);
-    bridge[i]->Start(NanoSeconds(bridge[i]->GetNodeId()));
+    //bridge[i]->Start(NanoSeconds(bridge[i]->GetNodeId()));
+    bridge[i]->Start(Time(0));
 
     if(i < apps_list.size())
     	bridge[i]->SetApplication(apps_list[i]);
