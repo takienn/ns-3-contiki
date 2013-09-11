@@ -60,6 +60,7 @@ ContikiPhy::DoDispose (void)
   m_mobility = 0;
   m_channel = 0;
   m_mode = DSSS_O_QPSK_GHz;
+  Object::DoDispose();
 }
 
 void

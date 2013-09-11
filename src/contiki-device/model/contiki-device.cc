@@ -74,6 +74,10 @@ void ContikiNetDevice::SetNNodes(uint32_t n) {
 void ContikiNetDevice::DoDispose() {
 	NS_LOG_FUNCTION_NOARGS ();
 	StopContikiDevice();
+	m_macLayer->Dispose ();
+	m_phy->Dispose ();
+	m_macLayer = 0;
+	m_phy = 0;
 	NetDevice::DoDispose();
 }
 
@@ -199,7 +203,7 @@ void ContikiNetDevice::ContikiClockHandle(uint64_t oldValue,
 	NS_LOG_LOGIC("Handling new time step " << newValue);
 	std::cout
 			<< " ---Wait Device  sharedSemaphores->sem_time ContikiClockHandle at "
-			<< newValue << " \n"; // << GetNodeId() << m_nodeId<< " \n";
+			<< now << " \n"; // << GetNodeId() << m_nodeId<< " \n";
 	if (sem_wait(&IpcReader::m_sem_time) == -1)
 		NS_FATAL_ERROR("sem_wait() failed: " << strerror(errno));
 	std::cout
