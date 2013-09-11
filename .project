@@ -3,7 +3,7 @@
 	<name>ns-3-dev-main</name>
 	<comment></comment>
 	<projects>
-		<project>contiki-port</project>
+		<project>contiki-main</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

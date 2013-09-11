@@ -98,7 +98,7 @@ ContikiPhyHelper::EnablePcapInternal (std::string prefix, Ptr<NetDevice> nd, boo
 	//
 	Ptr<ContikiNetDevice> device = nd->GetObject<ContikiNetDevice>();
 	if (device == 0) {
-		NS_LOG_INFO ("YansWifiHelper::EnablePcapInternal(): Device " << &device << " not of type ns3::WifiNetDevice");
+		NS_LOG_INFO ("ContikiPhyHelper::EnablePcapInternal(): Device " << &device << " not of type ns3::WifiNetDevice");
 		return;
 	}
 
